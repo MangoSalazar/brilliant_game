@@ -1,0 +1,133 @@
+/// Valida que el dato ingresado sea un número entero (o texto convertible a entero) 
+/// y que esté estrictamente en el rango de un dado de 6 caras[cite: 2].
+int? validateDiceInput(dynamic input) {
+  int? number;
+  if (input is int) {
+    number = input;
+  } else if (input is String) {
+    number = int.tryParse(input);
+  }
+  
+  if (number != null && number >= 1 && number <= 6) {
+    return number;
+  }
+  return null; // Retorna null si es un tipo de dato inválido o está fuera de rango
+}
+
+// ==========================================
+// Zonas de Color
+// ==========================================
+
+/// ZONA ROJA: Todos los números deben ser diferentes[cite: 2].
+List<int> tryAddRedPiece(List<int> zone, dynamic input) {
+  int? newPiece = validateDiceInput(input);
+  if (newPiece == null) {
+    print("❌ ROJO: Entrada inválida ('$input'). Solo números del 1 al 6.");
+    return zone;
+  }
+  if (!zone.contains(newPiece)) {
+    return [...zone, newPiece];
+  } else {
+    print("❌ ROJO: No se permite repetir el $newPiece.");
+    return zone;
+  }
+}
+
+/// ZONA AMARILLA: Al igual que la roja, todos los números deben ser diferentes[cite: 2].
+List<int> tryAddYellowPiece(List<int> zone, dynamic input) {
+  int? newPiece = validateDiceInput(input);
+  if (newPiece == null) {
+    print("❌ AMARILLO: Entrada inválida ('$input'). Solo números del 1 al 6.");
+    return zone;
+  }
+  if (!zone.contains(newPiece)) {
+    return [...zone, newPiece];
+  } else {
+    print("❌ AMARILLO: No se permite repetir el $newPiece.");
+    return zone;
+  }
+}
+
+/// ZONA AZUL: Todos los números deben ser idénticos[cite: 2].
+List<int> tryAddBluePiece(List<int> zone, dynamic input) {
+  int? newPiece = validateDiceInput(input);
+  if (newPiece == null) {
+    print("❌ AZUL: Entrada inválida ('$input'). Solo números del 1 al 6.");
+    return zone;
+  }
+  if (zone.isEmpty || zone.first == newPiece) {
+    return [...zone, newPiece];
+  } else {
+    print("❌ AZUL: El número debe ser igual a los existentes (${zone.first}).");
+    return zone;
+  }
+}
+
+/// ZONA VERDE: No hay restricciones, se acepta cualquier número válido[cite: 2].
+List<int> tryAddGreenPiece(List<int> zone, dynamic input) {
+  int? newPiece = validateDiceInput(input);
+  if (newPiece == null) {
+    print("❌ VERDE: Entrada inválida ('$input'). Solo números del 1 al 6.");
+    return zone;
+  }
+  return [...zone, newPiece];
+}
+
+/// ZONA MORADA: Solo se permite un máximo de dos números diferentes[cite: 2].
+List<int> tryAddPurplePiece(List<int> zone, dynamic input) {
+  int? newPiece = validateDiceInput(input);
+  if (newPiece == null) {
+    print("❌ MORADO: Entrada inválida ('$input'). Solo números del 1 al 6.");
+    return zone;
+  }
+  
+  Set<int> uniqueNumbers = zone.toSet();
+  uniqueNumbers.add(newPiece);
+  
+  if (uniqueNumbers.length <= 2) {
+    return [...zone, newPiece];
+  } else {
+    print("❌ MORADO: Ya existen dos números diferentes en esta zona.");
+    return zone;
+  }
+}
+
+// ==========================================
+// Pruebas Unitarias
+// ==========================================
+
+void main() {
+  print("--- PRUEBAS DE VALIDACIÓN DE TIPOS Y RANGOS ---");
+  assert(validateDiceInput(5) == 5, "Fallo: Entero válido");
+  assert(validateDiceInput("3") == 3, "Fallo: String numérico válido");
+  assert(validateDiceInput(7) == null, "Fallo: Fuera de rango superior");
+  assert(validateDiceInput(0) == null, "Fallo: Fuera de rango inferior");
+  assert(validateDiceInput("A") == null, "Fallo: Letra rechazada");
+  assert(validateDiceInput(3.5) == null, "Fallo: Decimales rechazados");
+  assert(validateDiceInput(null) == null, "Fallo: Null rechazado");
+
+  print("\n--- PRUEBAS DE REGLAS POR COLOR ---");
+  
+  // Prueba Rojo/Amarillo (Únicos)[cite: 2]
+  List<int> redZone = [1, 2];
+  assert(tryAddRedPiece(redZone, 3).length == 3, "Fallo ROJO: Debe aceptar número nuevo");
+  assert(tryAddRedPiece(redZone, 2).length == 2, "Fallo ROJO: Debe rechazar duplicado");
+
+  // Prueba Azul (Iguales)[cite: 2]
+  List<int> blueZone = [4];
+  assert(tryAddBluePiece(blueZone, 4).length == 2, "Fallo AZUL: Debe aceptar mismo número");
+  assert(tryAddBluePiece(blueZone, 5).length == 1, "Fallo AZUL: Debe rechazar número diferente");
+
+  // Prueba Verde (Cualquiera)[cite: 2]
+  List<int> greenZone = [6];
+  assert(tryAddGreenPiece(greenZone, 6).length == 2, "Fallo VERDE: Debe aceptar duplicado");
+  assert(tryAddGreenPiece(greenZone, 1).length == 2, "Fallo VERDE: Debe aceptar diferente");
+
+  // Prueba Morado (Máx 2 diferentes)[cite: 2]
+  List<int> purpleZone = [3, 5, 3];
+  assert(tryAddPurplePiece(purpleZone, 3).length == 4, "Fallo MORADO: Debe aceptar número ya existente");
+  assert(tryAddPurplePiece(purpleZone, 5).length == 4, "Fallo MORADO: Debe aceptar segundo número existente");
+  assert(tryAddPurplePiece(purpleZone, 6).length == 3, "Fallo MORADO: Debe rechazar un tercer número diferente");
+
+  print("\n✅ Todas las pruebas y validaciones pasaron correctamente.");
+}
