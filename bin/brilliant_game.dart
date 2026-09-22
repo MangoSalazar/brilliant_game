@@ -5,58 +5,83 @@ void main(List<String> arguments) {
   print('🎲 BIENVENIDO A LA SIMULACIÓN DE BRILLIANT 🎲');
   print('================================================\n');
 
-  // 1. Inicializamos un pequeño tablero de prueba
-  final board = BrilliantBoard([
-    Cell(id: 1, region: Region.red1, color: ZoneColor.red, value: 5),
-    Cell(id: 2, region: Region.red1, color: ZoneColor.red, value: null),
-    Cell(id: 3, region: Region.blue1, color: ZoneColor.blue, value: 4),
-    Cell(id: 4, region: Region.blue1, color: ZoneColor.blue, value: null),
-    Cell(id: 5, region: Region.purple1, color: ZoneColor.purple, value: 2),
-    Cell(id: 6, region: Region.purple1, color: ZoneColor.purple, value: 6),
-    Cell(id: 7, region: Region.purple1, color: ZoneColor.purple, value: null),
-  ]);
+  final redRegion = Region(
+    id: 'red1',
+    color: ZoneColor.red,
+    cellLimit: 3,
+    score: 10,
+    cells: [
+      Cell(coordinate: Coordinate(0, 0), value: 5),
+      Cell(coordinate: Coordinate(0, 1)), // Celda vacía
+      Cell(coordinate: Coordinate(0, 2)), // Celda vacía
+    ],
+  );
+
+  final blueRegion = Region(
+    id: 'blue1',
+    color: ZoneColor.blue,
+    cellLimit: 3,
+    score: 15,
+    cells: [
+      Cell(coordinate: Coordinate(1, 0), value: 4),
+      Cell(coordinate: Coordinate(1, 1)), // Celda vacía
+      Cell(coordinate: Coordinate(1, 2)), // Celda vacía
+    ],
+  );
+
+  final purpleRegion = Region(
+    id: 'purple1',
+    color: ZoneColor.purple,
+    cellLimit: 3,
+    score: 20,
+    cells: [
+      Cell(coordinate: Coordinate(2, 0), value: 2),
+      Cell(coordinate: Coordinate(2, 1), value: 2),
+      Cell(coordinate: Coordinate(2, 2)), // Celda vacía
+    ],
+  );
+
+  final board = BrilliantBoard(
+    regions: [redRegion, blueRegion, purpleRegion],
+  );
 
   print('Tablero inicializado con algunas casillas predefinidas.');
 
-  // 2. Extraer valores de un bloque usando el enum (la función principal)
   print('\n[1] EXTRACCIÓN DE VALORES POR REGIÓN:');
-  print('Valores actuales en la región ROJA (red1): ${board.getValuesByRegion(Region.red1)}');
-  print('Valores actuales en la región AZUL (blue1): ${board.getValuesByRegion(Region.blue1)}');
-  print('Valores actuales en la región MORADA (purple1): ${board.getValuesByRegion(Region.purple1)}');
+  print('Valores actuales en la región ROJA (red1): ${redRegion.getCurrentValues()}');
+  print('Valores actuales en la región AZUL (blue1): ${blueRegion.getCurrentValues()}');
+  print('Valores actuales en la región MORADA (purple1): ${purpleRegion.getCurrentValues()}');
 
-  // 3. Demostración de reglas: Región Roja (Todos diferentes)
   print('\n[2] PRUEBAS DE INSERCIÓN Y REGLAS:');
   print('\n--- Zona ROJA (Todos deben ser diferentes) ---');
   print('Intentando insertar el número 5 en la celda vacía...');
   
-  if (board.tryInsertValue(2, 5)) {
+  if (redRegion.insertNumber(Coordinate(0, 1), 5)) {
     print('✅ Éxito: Se insertó el 5.');
   } else {
     print('❌ Bloqueado: No se puede insertar el 5 porque ya existe en la zona roja.');
   }
 
   print('Intentando insertar el número 3 en la celda vacía...');
-  if (board.tryInsertValue(2, 3)) {
+  if (redRegion.insertNumber(Coordinate(0, 1), 3)) {
     print('✅ Éxito: Se insertó el 3 correctamente.');
   } else {
     print('❌ Bloqueado: No se pudo insertar.');
   }
 
-  // 4. Demostración de reglas: Región Morada (Máx 2 diferentes)
-  print('\n--- Zona MORADA (Máximo 2 números diferentes) ---');
-  print('Intentando insertar el número 4 (ya existen 2 y 6)...');
+  print('\n--- Zona MORADA (Todos iguales) ---');
+  print('Intentando insertar el número 4 (ya existen 2 y 2)...');
   
-  if (board.tryInsertValue(7, 4)) {
+  if (purpleRegion.insertNumber(Coordinate(2, 2), 4)) {
     print('✅ Éxito: Se insertó el 4.');
   } else {
-    print('❌ Bloqueado: No se permite un tercer número diferente (regla XO).');
+    print('❌ Bloqueado: No se permite un número diferente (deben ser todos iguales).');
   }
 
-  // 5. Mostrar el resultado final usando la función de extracción nuevamente
   print('\n================================================');
   print('RESULTADOS FINALES DESPUÉS DE LAS INSERCIONES:');
-  print('Región ROJA: ${board.getValuesByRegion(Region.red1)}');
-  print('Región MORADA: ${board.getValuesByRegion(Region.purple1)}');
+  print('Región ROJA: ${redRegion.getCurrentValues()}');
+  print('Región MORADA: ${purpleRegion.getCurrentValues()}');
   print('================================================\n');
   print('¡El programa está listo y ejecutándose sin errores!');
 }
