@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'region.dart';
 
 class Casilla {
@@ -74,6 +75,17 @@ class Tablero {
       alto,
       (y) => List.generate(ancho, (x) => Casilla(x, y)),
     );
+  }
+
+  List<Casilla> generarCasillasIniciales() {
+    var random = Random();
+    var seleccionadas = <Casilla>{};
+    while (seleccionadas.length < 6) {
+      int x = random.nextInt(ancho);
+      int y = random.nextInt(alto);
+      seleccionadas.add(celdas[y][x]);
+    }
+    return seleccionadas.toList();
   }
 
   Casilla getCasilla(int x, int y) {
