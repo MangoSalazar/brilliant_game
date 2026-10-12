@@ -1,6 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'tablero.dart';
+import '../../../tablero.dart';
 
 // --- Estados ---
 abstract class SetupState extends Equatable {
