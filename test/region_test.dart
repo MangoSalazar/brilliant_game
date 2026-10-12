@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import '../lib/region.dart';
+import 'package:brilliant_game/region.dart';
 
 void main() {
   group('Región Azul', () {

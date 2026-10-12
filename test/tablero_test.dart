@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
-import '../lib/region.dart';
-import '../lib/tablero.dart';
+import 'package:brilliant_game/region.dart';
+import 'package:brilliant_game/tablero.dart';
 
 void main() {
   group('Tablero y Casillas', () {

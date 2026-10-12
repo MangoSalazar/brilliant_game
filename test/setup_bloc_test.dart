@@ -1,7 +1,7 @@
 import 'package:test/test.dart';
 import 'package:bloc_test/bloc_test.dart';
-import '../lib/setup_bloc.dart';
-import '../lib/tablero.dart';
+import 'package:brilliant_game/features/board/bloc/setup_bloc.dart';
+import 'package:brilliant_game/tablero.dart';
 
 void main() {
   group('SetupBloc', () {

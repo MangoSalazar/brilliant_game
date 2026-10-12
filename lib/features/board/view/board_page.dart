@@ -20,9 +20,9 @@ class BoardPage extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
-          Tablero? tablero;
-          List<Casilla> requeridas = [];
-          Map<Casilla, int> ingresados = {};
+          final Tablero tablero;
+          final List<Casilla> requeridas;
+          final Map<Casilla, int> ingresados;
 
           if (state is SetupAwaitingInputs) {
             tablero = state.tablero;
@@ -30,9 +30,11 @@ class BoardPage extends StatelessWidget {
             ingresados = state.valoresIngresados;
           } else if (state is SetupCompleted) {
             tablero = state.tablero;
+            requeridas = const [];
+            ingresados = const {};
+          } else {
+            return const SizedBox();
           }
-
-          if (tablero == null) return const SizedBox();
 
           return Column(
             children: [
