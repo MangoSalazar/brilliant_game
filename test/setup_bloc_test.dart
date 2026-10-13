@@ -89,5 +89,46 @@ void main() {
             .having((state) => state.tablero, 'tablero', tablero)
       ],
     );
+
+    blocTest<SetupBloc, SetupState>(
+      'Permite limpiar un valor con ClearValue',
+      build: () => SetupBloc(),
+      seed: () {
+        final casillas = tablero.generarCasillasIniciales();
+        return SetupAwaitingInputs(
+          tablero: tablero,
+          casillasRequeridas: casillas,
+          valoresIngresados: {casillas[0]: 4},
+        );
+      },
+      act: (bloc) {
+        final state = bloc.state as SetupAwaitingInputs;
+        bloc.add(ClearValue(state.casillasRequeridas[0]));
+      },
+      expect: () => [
+        isA<SetupAwaitingInputs>()
+            .having((state) => state.valoresIngresados.containsKey(state.casillasRequeridas[0]), 'contiene clave', false)
+            .having((state) => state.casillasRequeridas[0].valor, 'valor de casilla', isNull)
+      ],
+    );
+
+    test('valoresDisponiblesPara devuelve solo los números no usados en otras casillas', () {
+      final casillas = tablero.generarCasillasIniciales();
+      final state = SetupAwaitingInputs(
+        tablero: tablero,
+        casillasRequeridas: casillas,
+        valoresIngresados: {
+          casillas[0]: 1,
+          casillas[1]: 3,
+          casillas[2]: 5,
+        },
+      );
+
+      // Para casillas[0], su propio valor (1) y los no usados (2, 4, 6) están disponibles
+      expect(state.valoresDisponiblesPara(casillas[0]), [1, 2, 4, 6]);
+      // Para una casilla vacía casillas[3], solo los no usados (2, 4, 6) están disponibles
+      expect(state.valoresDisponiblesPara(casillas[3]), [2, 4, 6]);
+    });
   });
 }
+

@@ -88,6 +88,23 @@ class Tablero {
     return seleccionadas.toList();
   }
 
+  /// Crea una copia independiente del tablero (valores y regiones incluidos).
+  Tablero clonar() {
+    final copia = Tablero(ancho: ancho, alto: alto);
+    for (var y = 0; y < alto; y++) {
+      for (var x = 0; x < ancho; x++) {
+        copia.celdas[y][x].valor = celdas[y][x].valor;
+      }
+    }
+    for (final g in regiones) {
+      copia.agregarRegion(
+        g.tipoRegion,
+        g.casillas.map((c) => copia.celdas[c.y][c.x]).toList(),
+      );
+    }
+    return copia;
+  }
+
   Casilla getCasilla(int x, int y) {
     if (x < 0 || x >= ancho || y < 0 || y >= alto) {
       throw ArgumentError('Coordenadas fuera del tablero');

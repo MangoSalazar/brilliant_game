@@ -25,6 +25,16 @@ class SetupAwaitingInputs extends SetupState {
     this.errorMessage,
   });
 
+  List<int> valoresDisponiblesPara(Casilla casilla) {
+    final valoresUsadosPorOtras = valoresIngresados.entries
+        .where((entry) => entry.key != casilla)
+        .map((entry) => entry.value)
+        .toSet();
+    return [1, 2, 3, 4, 5, 6]
+        .where((n) => !valoresUsadosPorOtras.contains(n))
+        .toList();
+  }
+
   @override
   List<Object?> get props => [tablero, casillasRequeridas, valoresIngresados, errorMessage];
 }
@@ -63,11 +73,20 @@ class InputValue extends SetupEvent {
   List<Object?> get props => [casilla, value];
 }
 
+class ClearValue extends SetupEvent {
+  final Casilla casilla;
+  const ClearValue(this.casilla);
+
+  @override
+  List<Object?> get props => [casilla];
+}
+
 // --- Bloc ---
 class SetupBloc extends Bloc<SetupEvent, SetupState> {
   SetupBloc() : super(SetupInitial()) {
     on<StartSetup>(_onStartSetup);
     on<InputValue>(_onInputValue);
+    on<ClearValue>(_onClearValue);
   }
 
   void _onStartSetup(StartSetup event, Emitter<SetupState> emit) {
@@ -129,5 +148,38 @@ class SetupBloc extends Bloc<SetupEvent, SetupState> {
         errorMessage: null,
       ));
     }
+  }
+
+  void _onClearValue(ClearValue event, Emitter<SetupState> emit) {
+    if (state is! SetupAwaitingInputs && state is! SetupCompleted) return;
+
+    final Tablero tablero;
+    final List<Casilla> casillasRequeridas;
+    final Map<Casilla, int> valoresIngresados;
+
+    if (state is SetupAwaitingInputs) {
+      final s = state as SetupAwaitingInputs;
+      tablero = s.tablero;
+      casillasRequeridas = s.casillasRequeridas;
+      valoresIngresados = Map<Casilla, int>.from(s.valoresIngresados);
+    } else {
+      final s = state as SetupCompleted;
+      tablero = s.tablero;
+      casillasRequeridas = s.tablero.celdas
+          .expand((row) => row)
+          .where((c) => c.valor != null)
+          .toList();
+      valoresIngresados = {for (var c in casillasRequeridas) c: c.valor!};
+    }
+
+    valoresIngresados.remove(event.casilla);
+    event.casilla.valor = null;
+
+    emit(SetupAwaitingInputs(
+      tablero: tablero,
+      casillasRequeridas: casillasRequeridas,
+      valoresIngresados: valoresIngresados,
+      errorMessage: null,
+    ));
   }
 }
