@@ -29,16 +29,25 @@ Pintar el tablero con sus colores de región, permitir al jugador colocar los 6 
 
 ---
 
-## 🚀 Fase 2: Ciclo de Jugabilidad y Turnos (Siguiente Iteración)
+## 🚀 Fase 2: Ciclo de Jugabilidad y Turnos (En curso)
 
-### 🎲 Épica 5: Gestión de Turnos y Fichas en BLoC
-- **Story 5.1: Estado de Partida Activa (`GamePlayState`)**
-  - Almacenar el turno actual, puntos acumulados y números disponibles por jugada.
-- **Story 5.2: Eventos de Jugada (`PlaceNumber`, `PassTurn`, `ResetGame`)**
-  - Validar colocación de números en casillas vacías adyacentes respetando las restricciones de color de cada región (`puedeAgregar`).
+### 🎲 Épica 5: Gestión de Turnos y Fichas en BLoC (Completada ✅ — `game_play_bloc.dart`)
+- **Story 5.1: Estado de Partida Activa (`GamePlayActive`)** ✅
+  - Un tablero independiente por jugador (`Tablero.clonar()`), jugador actual, puntos, 2 dados, ancla elegida, orden de completado por región, `terminada` y contador `jugadas`.
+  - Getters: `casillasValidas`, `regionesPorLlenar` (región completa + puntos que daría), `puntosParaCompletar`.
+- **Story 5.2: Eventos de Jugada** ✅
+  - `StartGame(tablero, jugadores)`, `SelectAnchor(dado)`, `PlaceNumber(x, y)`, `PassTurn`, `ResetGame`.
+  - Casilla válida = vacía, dentro de una región, adyacente a una ocupada y la región acepta el ancla (`puedeAgregar`).
+  - Puntuación al llenar una región: `puntuaciones[lugar]` según orden de llegada (1.º, 2.º, 3.º; después 0).
+- Tests: `test/game_play_bloc_test.dart` (6 casos). `dart analyze` sin errores.
 
-### 🧩 Épica 6: Interfaz Interactiva de Juego
+### 🧩 Épica 6: Interfaz Interactiva de Juego (Pendiente — siguiente paso)
+- **Story 6.0: Conectar el flujo Setup → Juego**
+  - `StartGameButton` debe disparar `StartGame(tablero, jugadores)` y navegar/cambiar a la pantalla de juego (`BlocProvider<GamePlayBloc>`).
 - **Story 6.1: Panel de Jugador y Puntuación**
-  - Mostrar turno actual, puntuación y bolsa/dados de números.
+  - Mostrar jugador actual, puntos de todos, los 2 dados (tocar uno = `SelectAnchor`) y botón `PassTurn`/`ResetGame`.
 - **Story 6.2: Retroalimentación Visual de Reglas de Región**
-  - Resaltar casillas válidas para jugar según la región tocada (Azul, Morado, Verde, Amarillo, Rojo).
+  - Iluminar `casillasValidas` del ancla elegida.
+  - Iluminar completa cada región de `regionesPorLlenar` y mostrar en su centro los puntos que daría.
+  - Tocar una casilla iluminada = `PlaceNumber`. Mostrar `errorMessage` y pantalla de fin (`terminada`) con ganador.
+- **Story 6.3: Tests de widget/bloc de la nueva UI.**
