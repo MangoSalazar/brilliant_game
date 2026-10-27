@@ -49,6 +49,11 @@ Este archivo mantiene el historial cronológico, el contexto acumulado de las co
 #### 6. Especificación de los 4 Mapas (`Documentacion/Mapas del juego.txt`)
 - El usuario definió la matriz de regiones y las 6 casillas iniciales de preparación para los 4 mapas del juego.
 
+#### 7. Implementación de Nuevas Regiones y Fábrica en Código
+- Se estructuró formalmente `TipoGris` y `TipoNaranja` con `VarianteNaranja` (alto y bajo) en `lib/region.dart`.
+- Se implementó el patrón Factory `Region.desdeNombre` para instanciar cualquier región a partir de cadenas de texto.
+- Se agregaron pruebas unitarias completas en `test/region_test.dart` y se registró el commit `736dc60`.
+
 ---
 
 ## 🎯 Siguientes Pasos
