@@ -8,14 +8,58 @@ class Color {
   const Color(this.value);
 }
 
+/// Variantes disponibles para la región Naranja.
+enum VarianteNaranja {
+  /// Admite únicamente números del 4 al 6.
+  alto,
+
+  /// Admite únicamente números del 1 al 3.
+  bajo,
+}
+
 abstract class Region {
+  const Region();
+
   Color get color;
   String get descripcion;
   bool esPosibleAgregar(List<int> actuales, int posibles);
   Map<int, int> get puntuaciones;
+
+  /// Método de fábrica para instanciar una región a partir de su nombre.
+  static Region desdeNombre(
+    String nombre, {
+    VarianteNaranja varianteNaranja = VarianteNaranja.alto,
+  }) {
+    switch (nombre.toLowerCase().trim()) {
+      case 'rojo':
+        return const TipoRojo();
+      case 'azul':
+        return const TipoAzul();
+      case 'verde':
+        return const TipoVerde();
+      case 'amarillo':
+        return const TipoAmarillo();
+      case 'morado':
+        return const TipoMorado();
+      case 'gris':
+        return const TipoGris();
+      case 'naranja':
+        return TipoNaranja(variante: varianteNaranja);
+      case 'naranja_alto':
+      case 'naranjaalto':
+        return const TipoNaranja.alto();
+      case 'naranja_bajo':
+      case 'naranjabajo':
+        return const TipoNaranja.bajo();
+      default:
+        throw ArgumentError('Tipo de región no reconocido: $nombre');
+    }
+  }
 }
 
 class TipoAzul extends Region {
+  const TipoAzul();
+
   @override
   Color get color => const Color(0xFF2196F3);
 
@@ -33,6 +77,8 @@ class TipoAzul extends Region {
 }
 
 class TipoVerde extends Region {
+  const TipoVerde();
+
   @override
   Color get color => const Color(0xFF4CAF50);
 
@@ -49,6 +95,8 @@ class TipoVerde extends Region {
 }
 
 class TipoAmarillo extends Region {
+  const TipoAmarillo();
+
   @override
   Color get color => const Color(0xFFFFC107);
 
@@ -65,6 +113,8 @@ class TipoAmarillo extends Region {
 }
 
 class TipoMorado extends Region {
+  const TipoMorado();
+
   @override
   Color get color => const Color(0xFF9C27B0);
 
@@ -81,6 +131,8 @@ class TipoMorado extends Region {
 }
 
 class TipoRojo extends Region {
+  const TipoRojo();
+
   @override
   Color get color => const Color(0xFFF44336);
 
@@ -96,7 +148,11 @@ class TipoRojo extends Region {
   Map<int, int> get puntuaciones => ConstantesJuego.puntuacionesEstandar;
 }
 
+/// Región Gris: Todos los números dentro de la zona deben ser idénticos.
+/// Puntuaciones: 1.º = 8 pts, 2.º = 6 pts, 3.er = 4 pts.
 class TipoGris extends Region {
+  const TipoGris();
+
   @override
   Color get color => const Color(0xFF9E9E9E);
 
@@ -112,34 +168,42 @@ class TipoGris extends Region {
   Map<int, int> get puntuaciones => ConstantesJuego.puntuacionesEstandar;
 }
 
-class TipoNaranjaAlto extends Region {
+/// Región Naranja: Presenta dos variantes posibles (Alto: 4-6, Bajo: 1-3).
+/// Puntuaciones en ambas variantes: 1.º = 6 pts, 2.º = 4 pts, 3.er = 3 pts.
+class TipoNaranja extends Region {
+  final VarianteNaranja variante;
+
+  const TipoNaranja({this.variante = VarianteNaranja.alto});
+  const TipoNaranja.alto() : variante = VarianteNaranja.alto;
+  const TipoNaranja.bajo() : variante = VarianteNaranja.bajo;
+
   @override
   Color get color => const Color(0xFFFF9800);
 
   @override
-  String get descripcion => ConstantesJuego.descRegionNaranjaAlto;
+  String get descripcion => variante == VarianteNaranja.alto
+      ? ConstantesJuego.descRegionNaranjaAlto
+      : ConstantesJuego.descRegionNaranjaBajo;
 
   @override
   bool esPosibleAgregar(List<int> actuales, int posible) {
-    return posible >= 4 && posible <= 6;
+    if (variante == VarianteNaranja.alto) {
+      return posible >= 4 && posible <= 6;
+    } else {
+      return posible >= 1 && posible <= 3;
+    }
   }
 
   @override
   Map<int, int> get puntuaciones => ConstantesJuego.puntuacionesNaranja;
 }
 
-class TipoNaranjaBajo extends Region {
-  @override
-  Color get color => const Color(0xFFFF9800);
+/// Subclase especializada para Naranja variante Alta (4 al 6).
+class TipoNaranjaAlto extends TipoNaranja {
+  const TipoNaranjaAlto() : super.alto();
+}
 
-  @override
-  String get descripcion => ConstantesJuego.descRegionNaranjaBajo;
-
-  @override
-  bool esPosibleAgregar(List<int> actuales, int posible) {
-    return posible >= 1 && posible <= 3;
-  }
-
-  @override
-  Map<int, int> get puntuaciones => ConstantesJuego.puntuacionesNaranja;
+/// Subclase especializada para Naranja variante Baja (1 al 3).
+class TipoNaranjaBajo extends TipoNaranja {
+  const TipoNaranjaBajo() : super.bajo();
 }

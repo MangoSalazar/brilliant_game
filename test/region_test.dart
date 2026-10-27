@@ -7,17 +7,17 @@ void main() {
     late TipoAzul region;
 
     setUp(() {
-      region = TipoAzul();
+      region = const TipoAzul();
     });
 
     test('Permite agregar si hay menos de dos números distintos', () {
-      expect(region.esPosibleAgregar([1, 1], 1), isTrue); // Mismo número (1 distinto total)
-      expect(region.esPosibleAgregar([1, 1], 2), isTrue); // Nuevo número (2 distintos en total)
-      expect(region.esPosibleAgregar([1, 2, 1], 2), isTrue); // Siguen siendo 2 distintos
+      expect(region.esPosibleAgregar([1, 1], 1), isTrue);
+      expect(region.esPosibleAgregar([1, 1], 2), isTrue);
+      expect(region.esPosibleAgregar([1, 2, 1], 2), isTrue);
     });
 
     test('No permite agregar si excede dos números distintos', () {
-      expect(region.esPosibleAgregar([1, 2], 3), isFalse); // Serían 3 distintos
+      expect(region.esPosibleAgregar([1, 2], 3), isFalse);
     });
   });
 
@@ -25,7 +25,7 @@ void main() {
     late TipoVerde region;
 
     setUp(() {
-      region = TipoVerde();
+      region = const TipoVerde();
     });
 
     test('Permite agregar cualquier número', () {
@@ -43,7 +43,7 @@ void main() {
     late TipoAmarillo region;
 
     setUp(() {
-      region = TipoAmarillo();
+      region = const TipoAmarillo();
     });
 
     test('Permite agregar si es un número distinto a todos', () {
@@ -59,7 +59,7 @@ void main() {
     late TipoMorado region;
 
     setUp(() {
-      region = TipoMorado();
+      region = const TipoMorado();
     });
 
     test('Permite agregar si es idéntico a los actuales', () {
@@ -75,7 +75,7 @@ void main() {
     late TipoRojo region;
 
     setUp(() {
-      region = TipoRojo();
+      region = const TipoRojo();
     });
 
     test('Permite agregar si es distinto a todos', () {
@@ -87,15 +87,16 @@ void main() {
     });
   });
 
-  group('Región Gris', () {
+  group('Región Gris (Nueva)', () {
     late TipoGris region;
 
     setUp(() {
-      region = TipoGris();
+      region = const TipoGris();
     });
 
     test('Permite agregar si es idéntico a los actuales', () {
       expect(region.esPosibleAgregar([3, 3], 3), isTrue);
+      expect(region.esPosibleAgregar([], 5), isTrue);
     });
 
     test('No permite agregar si es distinto a los actuales', () {
@@ -107,51 +108,52 @@ void main() {
     });
   });
 
-  group('Región Naranja Alto (4-6)', () {
-    late TipoNaranjaAlto region;
-
-    setUp(() {
-      region = TipoNaranjaAlto();
+  group('Región Naranja (Nueva)', () {
+    test('Variante Alta (4-6) acepta solo números 4, 5 y 6', () {
+      const naranjaAlto = TipoNaranja.alto();
+      expect(naranjaAlto.esPosibleAgregar([], 4), isTrue);
+      expect(naranjaAlto.esPosibleAgregar([4], 5), isTrue);
+      expect(naranjaAlto.esPosibleAgregar([4, 5], 6), isTrue);
+      expect(naranjaAlto.esPosibleAgregar([], 1), isFalse);
+      expect(naranjaAlto.esPosibleAgregar([], 3), isFalse);
+      expect(naranjaAlto.puntuaciones, ConstantesJuego.puntuacionesNaranja);
     });
 
-    test('Permite números en el rango 4 al 6', () {
-      expect(region.esPosibleAgregar([], 4), isTrue);
-      expect(region.esPosibleAgregar([4], 5), isTrue);
-      expect(region.esPosibleAgregar([4, 5], 6), isTrue);
+    test('Variante Baja (1-3) acepta solo números 1, 2 y 3', () {
+      const naranjaBajo = TipoNaranja.bajo();
+      expect(naranjaBajo.esPosibleAgregar([], 1), isTrue);
+      expect(naranjaBajo.esPosibleAgregar([1], 2), isTrue);
+      expect(naranjaBajo.esPosibleAgregar([1, 2], 3), isTrue);
+      expect(naranjaBajo.esPosibleAgregar([], 4), isFalse);
+      expect(naranjaBajo.esPosibleAgregar([], 6), isFalse);
+      expect(naranjaBajo.puntuaciones, ConstantesJuego.puntuacionesNaranja);
     });
 
-    test('Rechaza números menores a 4', () {
-      expect(region.esPosibleAgregar([], 1), isFalse);
-      expect(region.esPosibleAgregar([], 2), isFalse);
-      expect(region.esPosibleAgregar([], 3), isFalse);
-    });
-
-    test('Puntuaciones corresponden a la escala naranja (6, 4, 3)', () {
-      expect(region.puntuaciones, ConstantesJuego.puntuacionesNaranja);
+    test('Subclases TipoNaranjaAlto y TipoNaranjaBajo heredan el comportamiento', () {
+      const alto = TipoNaranjaAlto();
+      const bajo = TipoNaranjaBajo();
+      expect(alto.esPosibleAgregar([], 5), isTrue);
+      expect(alto.esPosibleAgregar([], 2), isFalse);
+      expect(bajo.esPosibleAgregar([], 2), isTrue);
+      expect(bajo.esPosibleAgregar([], 5), isFalse);
     });
   });
 
-  group('Región Naranja Bajo (1-3)', () {
-    late TipoNaranjaBajo region;
-
-    setUp(() {
-      region = TipoNaranjaBajo();
+  group('Fábrica Region.desdeNombre', () {
+    test('Crea instancias correctas para todos los colores', () {
+      expect(Region.desdeNombre('gris'), isA<TipoGris>());
+      expect(Region.desdeNombre('naranja'), isA<TipoNaranja>());
+      expect(Region.desdeNombre('naranja_bajo'), isA<TipoNaranjaBajo>());
+      expect(Region.desdeNombre('naranja_alto'), isA<TipoNaranjaAlto>());
+      expect(Region.desdeNombre('rojo'), isA<TipoRojo>());
+      expect(Region.desdeNombre('azul'), isA<TipoAzul>());
+      expect(Region.desdeNombre('verde'), isA<TipoVerde>());
+      expect(Region.desdeNombre('morado'), isA<TipoMorado>());
+      expect(Region.desdeNombre('amarillo'), isA<TipoAmarillo>());
     });
 
-    test('Permite números en el rango 1 al 3', () {
-      expect(region.esPosibleAgregar([], 1), isTrue);
-      expect(region.esPosibleAgregar([1], 2), isTrue);
-      expect(region.esPosibleAgregar([1, 2], 3), isTrue);
-    });
-
-    test('Rechaza números mayores a 3', () {
-      expect(region.esPosibleAgregar([], 4), isFalse);
-      expect(region.esPosibleAgregar([], 5), isFalse);
-      expect(region.esPosibleAgregar([], 6), isFalse);
-    });
-
-    test('Puntuaciones corresponden a la escala naranja (6, 4, 3)', () {
-      expect(region.puntuaciones, ConstantesJuego.puntuacionesNaranja);
+    test('Lanza ArgumentError para nombres inválidos', () {
+      expect(() => Region.desdeNombre('desconocido'), throwsArgumentError);
     });
   });
 }
