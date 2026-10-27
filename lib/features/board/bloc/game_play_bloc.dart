@@ -2,12 +2,13 @@ import 'dart:math';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import '../../../constantes.dart';
 import '../../../tablero.dart';
 
 // --- Estados ---
 
-/// Casillas que se iluminan por completo porque la jugada las llenarÃ­a,
-/// junto con los puntos que se obtendrÃ­an.
+/// Casillas que se iluminan por completo porque la jugada las llenaría,
+/// junto con los puntos que se obtendrían.
 class RegionPorLlenar extends Equatable {
   final int indiceRegion;
   final int puntos;
@@ -37,10 +38,10 @@ class GamePlayActive extends GamePlayState {
   /// Resultado de los 2 dados del turno actual.
   final List<int> dados;
 
-  /// Ãndice (0 o 1) del dado elegido como ancla, o null si aÃºn no se elige.
+  /// Índice (0 o 1) del dado elegido como ancla, o null si aún no se elige.
   final int? anclaIndex;
 
-  /// Por Ã­ndice de regiÃ³n: jugadores en el orden en que la completaron.
+  /// Por índice de región: jugadores en el orden en que la completaron.
   final Map<int, List<int>> ordenCompletado;
   final String? errorMessage;
   final bool terminada;
@@ -64,14 +65,14 @@ class GamePlayActive extends GamePlayState {
   Tablero get tableroActual => tableros[jugadorActual];
   int? get ancla => anclaIndex == null ? null : dados[anclaIndex!];
 
-  /// Casillas vacÃ­as de una regiÃ³n del jugador actual donde se puede colocar el ancla.
+  /// Casillas vacías de una región del jugador actual donde se puede colocar el ancla.
   List<Casilla> get casillasValidas {
     final valor = ancla;
     if (valor == null || terminada) return const [];
     return _calcularValidas(tableroActual, valor);
   }
 
-  /// Regiones que quedarÃ­an llenas con una jugada vÃ¡lida, con su puntuaciÃ³n.
+  /// Regiones que quedarían llenas con una jugada válida, con su puntuación.
   List<RegionPorLlenar> get regionesPorLlenar {
     final valor = ancla;
     if (valor == null || terminada) return const [];
@@ -88,7 +89,7 @@ class GamePlayActive extends GamePlayState {
     return resultado;
   }
 
-  /// Puntos que obtendrÃ­a el jugador actual al completar la regiÃ³n ahora.
+  /// Puntos que obtendría el jugador actual al completar la región ahora.
   int puntosParaCompletar(int indiceRegion, GrupoRegion grupo) {
     final lugar = (ordenCompletado[indiceRegion]?.length ?? 0) + 1;
     return grupo.tipoRegion.puntuaciones[lugar] ?? 0;
@@ -131,8 +132,8 @@ class GamePlayActive extends GamePlayState {
       ];
 }
 
-/// Casillas vacÃ­as, pertenecientes a una regiÃ³n, adyacentes a una casilla ocupada
-/// y cuya regiÃ³n admite [valor].
+/// Casillas vacías, pertenecientes a una región, adyacentes a una casilla ocupada
+/// y cuya región admite [valor].
 List<Casilla> _calcularValidas(Tablero tablero, int valor) {
   final validas = <Casilla>[];
   for (final g in tablero.regiones) {
@@ -173,7 +174,7 @@ class StartGame extends GamePlayEvent {
   List<Object?> get props => [tableroPreparado, jugadores];
 }
 
-/// Elige cuÃ¡l de los dos dados (0 o 1) actÃºa como ancla.
+/// Elige cuál de los dos dados (0 o 1) actúa como ancla.
 class SelectAnchor extends GamePlayEvent {
   final int dadoIndex;
   const SelectAnchor(this.dadoIndex);
@@ -217,7 +218,10 @@ class GamePlayBloc extends Bloc<GamePlayEvent, GamePlayState> {
     on<ResetGame>(_onResetGame);
   }
 
-  List<int> _tirarDados() => [_random.nextInt(6) + 1, _random.nextInt(6) + 1];
+  List<int> _tirarDados() => [
+        _random.nextInt(ConstantesJuego.valorDadoMaximo) + 1,
+        _random.nextInt(ConstantesJuego.valorDadoMaximo) + 1
+      ];
 
   void _iniciar(Emitter<GamePlayState> emit) {
     final base = _base!;
@@ -257,7 +261,7 @@ class GamePlayBloc extends Bloc<GamePlayEvent, GamePlayState> {
 
     final valor = s.ancla;
     if (valor == null) {
-      emit(s.copyWith(errorMessage: () => 'Elige primero un dado como ancla.'));
+      emit(s.copyWith(errorMessage: () => ConstantesJuego.errorEligeAncla));
       return;
     }
 
@@ -268,7 +272,7 @@ class GamePlayBloc extends Bloc<GamePlayEvent, GamePlayState> {
     final casilla = tablero.getCasilla(event.x, event.y);
     if (!s.casillasValidas.contains(casilla)) {
       emit(s.copyWith(
-        errorMessage: () => 'No puedes colocar el $valor en esa casilla.',
+        errorMessage: () => ConstantesJuego.errorCasillaInvalida(valor),
       ));
       return;
     }
@@ -288,9 +292,10 @@ class GamePlayBloc extends Bloc<GamePlayEvent, GamePlayState> {
       };
     }
 
-    final terminada = s.tableros.every(
-      (t) => t.regiones.every((g) => g.estaLlena),
-    );
+    final terminada = puntos.any((p) => p >= ConstantesJuego.puntosParaGanar) ||
+        s.tableros.every(
+          (t) => t.regiones.every((g) => g.estaLlena),
+        );
 
     emit(s.copyWith(
       puntos: puntos,

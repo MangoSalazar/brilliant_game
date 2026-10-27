@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import '../../../constantes.dart';
 import '../../../tablero.dart';
 
 // --- Estados ---
@@ -30,9 +31,10 @@ class SetupAwaitingInputs extends SetupState {
         .where((entry) => entry.key != casilla)
         .map((entry) => entry.value)
         .toSet();
-    return [1, 2, 3, 4, 5, 6]
-        .where((n) => !valoresUsadosPorOtras.contains(n))
-        .toList();
+    return List.generate(
+      ConstantesJuego.valorDadoMaximo - ConstantesJuego.valorDadoMinimo + 1,
+      (i) => ConstantesJuego.valorDadoMinimo + i,
+    ).where((n) => !valoresUsadosPorOtras.contains(n)).toList();
   }
 
   @override
@@ -107,17 +109,17 @@ class SetupBloc extends Bloc<SetupEvent, SetupState> {
         tablero: currentState.tablero,
         casillasRequeridas: currentState.casillasRequeridas,
         valoresIngresados: currentState.valoresIngresados,
-        errorMessage: 'Esta casilla no es una de las 6 requeridas al inicio.',
+        errorMessage: 'Esta casilla no es una de las ${ConstantesJuego.cantidadValoresIniciales} requeridas al inicio.',
       ));
       return;
     }
 
-    if (event.value < 1 || event.value > 6) {
+    if (event.value < ConstantesJuego.valorDadoMinimo || event.value > ConstantesJuego.valorDadoMaximo) {
       emit(SetupAwaitingInputs(
         tablero: currentState.tablero,
         casillasRequeridas: currentState.casillasRequeridas,
         valoresIngresados: currentState.valoresIngresados,
-        errorMessage: 'El valor debe estar entre 1 y 6.',
+        errorMessage: ConstantesJuego.errorRangoDado,
       ));
       return;
     }
@@ -131,14 +133,14 @@ class SetupBloc extends Bloc<SetupEvent, SetupState> {
         tablero: currentState.tablero,
         casillasRequeridas: currentState.casillasRequeridas,
         valoresIngresados: currentState.valoresIngresados, // no guardamos el repetido
-        errorMessage: 'Los 6 valores iniciales deben ser todos distintos entre sí.',
+        errorMessage: ConstantesJuego.errorValoresInicialesDuplicados,
       ));
       return;
     }
 
     event.casilla.valor = event.value;
 
-    if (newInputs.length == 6) {
+    if (newInputs.length == ConstantesJuego.cantidadValoresIniciales) {
       emit(SetupCompleted(tablero: currentState.tablero));
     } else {
       emit(SetupAwaitingInputs(

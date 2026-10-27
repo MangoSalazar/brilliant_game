@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'constantes.dart';
 import 'region.dart';
 
 class Casilla {
@@ -25,15 +26,15 @@ class GrupoRegion {
 
   void agregarValor(Casilla casilla, int valor) {
     if (!casillas.contains(casilla)) {
-      throw ArgumentError('La casilla no pertenece a esta región');
+      throw ArgumentError(ConstantesJuego.errorCasillaNoPertenece);
     }
-    if (valor < 1 || valor > 6) {
-      throw ArgumentError('El valor debe estar entre 1 y 6');
+    if (valor < ConstantesJuego.valorDadoMinimo || valor > ConstantesJuego.valorDadoMaximo) {
+      throw ArgumentError(ConstantesJuego.errorRangoDado);
     }
     if (puedeAgregar(valor)) {
       casilla.valor = valor;
     } else {
-      throw ArgumentError('Valor no válido para las reglas de esta región');
+      throw ArgumentError(ConstantesJuego.errorReglasRegion);
     }
   }
 
@@ -70,7 +71,10 @@ class Tablero {
   late final List<List<Casilla>> celdas;
   final List<GrupoRegion> regiones = [];
 
-  Tablero({this.ancho = 7, this.alto = 7}) {
+  Tablero({
+    this.ancho = ConstantesJuego.anchoTableroPorDefecto,
+    this.alto = ConstantesJuego.altoTableroPorDefecto,
+  }) {
     celdas = List.generate(
       alto,
       (y) => List.generate(ancho, (x) => Casilla(x, y)),
@@ -80,7 +84,7 @@ class Tablero {
   List<Casilla> generarCasillasIniciales() {
     var random = Random();
     var seleccionadas = <Casilla>{};
-    while (seleccionadas.length < 6) {
+    while (seleccionadas.length < ConstantesJuego.cantidadValoresIniciales) {
       int x = random.nextInt(ancho);
       int y = random.nextInt(alto);
       seleccionadas.add(celdas[y][x]);
@@ -107,7 +111,7 @@ class Tablero {
 
   Casilla getCasilla(int x, int y) {
     if (x < 0 || x >= ancho || y < 0 || y >= alto) {
-      throw ArgumentError('Coordenadas fuera del tablero');
+      throw ArgumentError(ConstantesJuego.errorCoordenadasFuera);
     }
     return celdas[y][x];
   }
@@ -115,7 +119,7 @@ class Tablero {
   void agregarRegion(Region tipoRegion, List<Casilla> casillasRegion) {
     var grupo = GrupoRegion(tipoRegion, casillasRegion);
     if (!grupo.validarForma()) {
-      throw ArgumentError('Las casillas de esta región deben estar conectadas, excepto si es amarilla');
+      throw ArgumentError(ConstantesJuego.errorFormaRegion);
     }
     
     for (var regionExistente in regiones) {
