@@ -1,0 +1,51 @@
+#1 Mapa
+[
+  ["Verde", "Verde", "Azul", "Morado", "Morado", "Amarillo"],
+  ["Verde", "Rojo", "Azul", "Morado", "Morado", "Verde"],
+  ["Verde", "Rojo", "Rojo", "Amarillo", "Verde", "Verde"],
+  ["Verde", "Rojo", "Morado", "Morado", "Rojo", "Azul"],
+  ["Amarillo", "Morado", "Morado", "Rojo", "Azul", "Azul"],
+  ["Morado", "Morado", "Rojo", "Rojo", "Azul", "Amarillo"],
+  ["Morado", "Morado", "Rojo", "Rojo", "Azul", "Amarillo"]
+]
+Casillas iniciales:
+[Fila 1, Columna 3], [Fila 2, Columna 6], [Fila 4, Columna 2], [Fila 4, Columna 5], [Fila 6, Columna 3], [Fila 7, Columna 5]
+
+#2 Mapa
+[
+  ["Morado", "Morado", "Morado", "Gris", "Verde", "Verde"],
+  ["Morado", "Amarillo", "Azul", "Azul", "Azul", "Verde"],
+  ["Morado", "Rojo", "Rojo", "Amarillo", "Rojo", "Rojo"],
+  ["Verde", "Rojo", "Rojo", "Azul", "Rojo", "Morado"],
+  ["Verde", "Verde", "Azul", "Azul", "Amarillo", "Morado"],
+  ["Verde", "Verde", "Azul", "Azul", "Morado", "Morado"],
+  ["Verde", "Verde", "Gris", "Morado", "Morado", "Morado"]
+]
+Casillas iniciales:
+[Fila 1, Columna 5], [Fila 3, Columna 1], [Fila 4, Columna 3], [Fila 5, Columna 6], [Fila 6, Columna 2], [Fila 7, Columna 5]
+
+#3 Mapa
+[
+  ["Amarillo", "Amarillo", "Morado", "Gris", "Amarillo", "Amarillo"],
+  ["Gris", "Amarillo", "Morado", "Morado", "Amarillo", "Gris"],
+  ["Rojo", "Rojo", "Rojo", "Morado", "Rojo", "Rojo"],
+  ["Rojo", "Rojo", "Rojo", "Morado", "Rojo", "Rojo"],
+  ["Azul", "Azul", "Azul", "Azul", "Azul", "Azul"],
+  ["Verde", "Verde", "Verde", "Verde", "Verde", "Verde"],
+  ["Morado", "Morado", "Morado", "Gris", "Morado", "Morado"]
+]
+Casillas iniciales:
+[Fila 2, Columna 3], [Fila 2, Columna 6], [Fila 4, Columna 5], [Fila 5, Columna 2], [Fila 5, Columna 7], [Fila 7, Columna 3]
+
+#4 Mapa
+[
+  ["Naranja", "Naranja", "Naranja", "Naranja", "Naranja", "Naranja"],
+  ["Naranja", "Amarillo", "Rojo", "Verde", "Azul", "Naranja"],
+  ["Naranja", "Morado", "Morado", "Morado", "Rojo", "Naranja"],
+  ["Naranja", "Rojo", "Azul", "Azul", "Verde", "Naranja"],
+  ["Naranja", "Amarillo", "Verde", "Verde", "Morado", "Naranja"],
+  ["Naranja", "Amarillo", "Azul", "Rojo", "Amarillo", "Naranja"],
+  ["Naranja", "Naranja", "Naranja", "Naranja", "Naranja", "Naranja"]
+]
+Casillas iniciales:
+[Fila 1, Columna 5], [Fila 3, Columna 3], [Fila 3, Columna 6], [Fila 4, Columna 1], [Fila 6, Columna 5], [Fila 7, Columna 2]
