@@ -96,6 +96,13 @@ Este archivo mantiene el historial cronológico, el contexto acumulado de las co
   - `WipScreen`: Pantalla de destino post-autenticación con el indicador de "🚧 WIP 🚧", badge del usuario autenticado y botón para cerrar sesión.
 - Se añadieron runners de plataforma para Flutter (Windows y Android) y pruebas unitarias/de widgets completas (`test/auth_bloc_test.dart`, `test/widget_test.dart`), alcanzando 47 tests aprobados sin advertencias de análisis.
 
+#### 6. Iconografía Moderna y Soporte Web
+- Se integró la librería `font_awesome_flutter` (v11.0.0) para dotar a la interfaz de una estética gaming profesional:
+  - Isotipo con dado poliédrico tridimensional `FontAwesomeIcons.diceD6`.
+  - Íconos de formulario modernos (`FontAwesomeIcons.user`, `lock`, `shieldHalved`, `eye`, `eyeSlash`).
+  - Íconos de acción contextuales en botones (`rightToBracket`, `userPlus`, `arrowRightFromBracket`, `screwdriverWrench`).
+- Se configuró la plataforma **Web** para permitir la ejecución inmediata y pruebas interactivas en el navegador (Edge / Chrome) sin requerir compiladores pesados de C++ de Visual Studio.
+
 ---
 
 ## 🎯 Siguientes Pasos
