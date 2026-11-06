@@ -56,7 +56,40 @@ Este archivo mantiene el historial cronológico, el contexto acumulado de las co
 
 ---
 
+### Sesión: 5 de Noviembre de 2026
+
+#### 1. Reestructuración de la Arquitectura: Modelo Cliente - Servidor
+- Se define la separación del proyecto en dos partes principales: **Cliente** (App Flutter) y **Servidor** (Backend autoritativo con base de datos para persistencia).
+- **Persistencia y Autenticación:** 
+  - Pantalla inicial con registro y login de usuarios (usuario y contraseña validados por el servidor antes de ingresar a partidas).
+- **Menú Principal:**
+  - Opciones de "Crear una partida" o "Unirse a una partida".
+
+#### 2. Sistema de Salas (Lobbies) y Pre-partida
+- **Código de Sala:** Cada sala creada genera automáticamente un código único de 5 dígitos para unirse.
+- **Capacidad:** Máximo de 6 jugadores por sala.
+- **Game Master (Anfitrión):**
+  - Selecciona 1 de los 4 mapas disponibles.
+  - Tiene la facultad de expulsar jugadores.
+  - Es el único con el botón para comenzar la partida.
+- **Mecánica de Confirmación "Listo":**
+  - Lista de jugadores en tiempo real.
+  - Cada participante dispone de un botón para marcarse como "Listo"; su nombre se ilumina en color verde.
+  - La partida **no** puede comenzar hasta que **todos** los participantes estén listos y el Game Master presione comenzar.
+
+#### 3. Regla Fundamental de Dados Globales por Servidor
+- Los dados dejan de ser individuales: **el servidor arroja los 2 dados al inicio de cada ronda**.
+- El resultado es exactamente el mismo para todos los jugadores.
+- Cada jugador elige independientemente en su turno/ronda cuál dado usar como ancla y en qué casilla adyacente válida colocar el segundo dado.
+
+#### 4. Actualización Documental
+- Se actualizó formalmente `Documentacion/Definicion de juego.md` reflejando la nueva arquitectura cliente-servidor, flujos de autenticación, gestión de salas, dados centralizados y nuevos requerimientos técnicos.
+
+---
+
 ## 🎯 Siguientes Pasos
-1. Modelar e implementar la carga/creación de los 4 mapas oficiales del juego en Dart basados en `Mapas del juego.txt`.
-2. Implementar la resolución y registro de empates en la misma ronda dentro de `GamePlayBloc`.
-3. Ampliar la suite de pruebas unitarias para tableros completos y flujos de partida basados en los nuevos mapas.
+1. Definir la tecnología del Servidor y Base de Datos (e.g. backend en Dart con WebSockets + SQLite/PostgreSQL o BaaS).
+2. Estructurar el espacio de trabajo monorepo (`client`, `server`, `shared_logic`) o paquetes modulares en Dart.
+3. Actualizar `ConstantesJuego` con los parámetros de sala (código de 5 dígitos, max 6 jugadores).
+4. Implementar los modelos de `Usuario`, `Sala` / `Lobby`, `JugadorSala` y sus BLoCs (`AuthBloc`, `LobbyBloc`).
+5. Modelar los 4 mapas oficiales y el motor de tirada compartida de dados en el servidor.

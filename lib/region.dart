@@ -47,10 +47,10 @@ abstract class Region {
         return TipoNaranja(variante: varianteNaranja);
       case 'naranja_alto':
       case 'naranjaalto':
-        return const TipoNaranja.alto();
+        return const TipoNaranjaAlto();
       case 'naranja_bajo':
       case 'naranjabajo':
-        return const TipoNaranja.bajo();
+        return const TipoNaranjaBajo();
       default:
         throw ArgumentError('Tipo de región no reconocido: $nombre');
     }

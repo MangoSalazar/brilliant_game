@@ -22,6 +22,15 @@ abstract final class ConstantesJuego {
   static const int totalMapas = 4;
 
   // ==========================================
+  // Parámetros de Salas y Multijugador
+  // ==========================================
+  /// Cantidad máxima de jugadores permitidos por sala.
+  static const int maxJugadoresPorSala = 6;
+
+  /// Longitud exacta en dígitos del código de acceso a la sala.
+  static const int longitudCodigoSala = 5;
+
+  // ==========================================
   // Dimensiones del Tablero
   // ==========================================
   static const int anchoTableroPorDefecto = 7;
@@ -75,10 +84,18 @@ abstract final class ConstantesJuego {
   static const String errorFormaRegion = 'Las casillas de esta región deben estar conectadas, excepto si es amarilla';
   static const String errorCasillaSuperpuesta = 'La casilla ya pertenece a otra región';
   static const String errorCoordenadasFuera = 'Coordenadas fuera del tablero';
+  static const String errorSalaLlena = 'La sala ya alcanzó su capacidad máxima de 6 jugadores.';
+  static const String errorSalaNoExiste = 'No se encontró ninguna sala con ese código.';
+  static const String errorCodigoInvalido = 'El código de sala debe tener exactamente 5 dígitos.';
+  static const String errorJugadoresNoListos = 'No todos los jugadores están listos para iniciar la partida.';
+  static const String errorSoloHostInicia = 'Solo el Game Master puede iniciar la partida.';
+  static const String errorSoloHostExpulsa = 'Solo el Game Master puede expulsar a otros jugadores.';
+  static const String errorCredencialesInvalidas = 'Usuario o contraseña incorrectos.';
 
   // ==========================================
   // Textos de Estado del Juego
   // ==========================================
   static const String msgPartidaTerminada = '¡Partida terminada! Un jugador ha alcanzado la victoria.';
   static const String msgTurnoPasado = 'Turno pasado.';
+  static const String msgJugadorExpulsado = 'Has sido expulsado de la sala.';
 }
