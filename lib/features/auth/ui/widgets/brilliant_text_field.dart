@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class BrilliantTextField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
   final String hintText;
-  final IconData prefixIcon;
+  final FaIconData prefixIcon;
   final bool obscureText;
   final bool isPassword;
   final VoidCallback? onToggleVisibility;
@@ -66,17 +67,24 @@ class BrilliantTextField extends StatelessWidget {
                 color: Color(0xFF555E75),
                 fontSize: 14,
               ),
-              prefixIcon: Icon(
-                prefixIcon,
-                color: const Color(0xFF6B7280),
-                size: 20,
+              prefixIcon: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: FaIcon(
+                  prefixIcon,
+                  color: const Color(0xFF818CF8),
+                  size: 16,
+                ),
+              ),
+              prefixIconConstraints: const BoxConstraints(
+                minWidth: 44,
+                minHeight: 20,
               ),
               suffixIcon: isPassword
                   ? IconButton(
-                      icon: Icon(
-                        obscureText ? Icons.visibility_off : Icons.visibility,
-                        color: const Color(0xFF6B7280),
-                        size: 20,
+                      icon: FaIcon(
+                        obscureText ? FontAwesomeIcons.eyeSlash : FontAwesomeIcons.eye,
+                        color: const Color(0xFF64748B),
+                        size: 16,
                       ),
                       onPressed: onToggleVisibility,
                     )

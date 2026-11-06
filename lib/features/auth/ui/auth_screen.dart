@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
@@ -116,10 +117,10 @@ class _AuthScreenState extends State<AuthScreen> {
                             ),
                             child: Row(
                               children: [
-                                const Icon(
-                                  Icons.error_outline_rounded,
+                                const FaIcon(
+                                  FontAwesomeIcons.circleExclamation,
                                   color: Color(0xFFFB7185),
-                                  size: 20,
+                                  size: 16,
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
@@ -143,7 +144,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           controller: _usernameController,
                           label: 'NOMBRE DE USUARIO',
                           hintText: 'Ej. jugador1',
-                          prefixIcon: Icons.person_outline_rounded,
+                          prefixIcon: FontAwesomeIcons.user,
                           enabled: !isLoading,
                           textInputAction: TextInputAction.next,
                         ),
@@ -154,7 +155,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           controller: _passwordController,
                           label: 'CONTRASEÑA',
                           hintText: 'Mínimo 6 caracteres',
-                          prefixIcon: Icons.lock_outline_rounded,
+                          prefixIcon: FontAwesomeIcons.lock,
                           isPassword: true,
                           obscureText: _obscurePassword,
                           enabled: !isLoading,
@@ -180,7 +181,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             controller: _confirmPasswordController,
                             label: 'CONFIRMAR CONTRASEÑA',
                             hintText: 'Repite tu contraseña',
-                            prefixIcon: Icons.shield_outlined,
+                            prefixIcon: FontAwesomeIcons.shieldHalved,
                             isPassword: true,
                             obscureText: _obscureConfirmPassword,
                             enabled: !isLoading,
@@ -224,13 +225,29 @@ class _AuthScreenState extends State<AuthScreen> {
                                       color: Colors.white,
                                     ),
                                   )
-                                : Text(
-                                    isRegister ? 'REGISTRARSE' : 'ENTRAR A LA PARTIDA',
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 1.2,
-                                    ),
+                                : Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      FaIcon(
+                                        isRegister
+                                            ? FontAwesomeIcons.userPlus
+                                            : FontAwesomeIcons.rightToBracket,
+                                        size: 15,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        child: Text(
+                                          isRegister ? 'REGISTRARSE' : 'ENTRAR A LA PARTIDA',
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 0.8,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                           ),
                         ),

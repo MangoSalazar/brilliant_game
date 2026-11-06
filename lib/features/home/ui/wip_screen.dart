@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/bloc/auth_event.dart';
 import '../../auth/models/usuario.dart';
@@ -35,10 +36,10 @@ class WipScreen extends StatelessWidget {
               onPressed: () {
                 context.read<AuthBloc>().add(const AuthLogoutRequested());
               },
-              icon: const Icon(
-                Icons.logout_rounded,
+              icon: const FaIcon(
+                FontAwesomeIcons.arrowRightFromBracket,
                 color: Color(0xFFF43F5E),
-                size: 18,
+                size: 15,
               ),
               label: const Text(
                 'Cerrar Sesión',
@@ -95,10 +96,10 @@ class WipScreen extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
-                            Icons.check_circle_rounded,
+                          const FaIcon(
+                            FontAwesomeIcons.circleCheck,
                             color: Color(0xFF10B981),
-                            size: 18,
+                            size: 15,
                           ),
                           const SizedBox(width: 8),
                           Text(
@@ -116,20 +117,28 @@ class WipScreen extends StatelessWidget {
 
                     // Emblema WIP
                     Container(
-                      width: 90,
-                      height: 90,
+                      width: 86,
+                      height: 86,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                        color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: const Color(0xFFF59E0B),
                           width: 2,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFF59E0B).withValues(alpha: 0.25),
+                            blurRadius: 20,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
                       child: const Center(
-                        child: Text(
-                          '🚧',
-                          style: TextStyle(fontSize: 42),
+                        child: FaIcon(
+                          FontAwesomeIcons.screwdriverWrench,
+                          color: Color(0xFFF59E0B),
+                          size: 34,
                         ),
                       ),
                     ),
@@ -178,7 +187,10 @@ class WipScreen extends StatelessWidget {
                         onPressed: () {
                           context.read<AuthBloc>().add(const AuthLogoutRequested());
                         },
-                        icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                        icon: const FaIcon(
+                          FontAwesomeIcons.arrowLeft,
+                          size: 15,
+                        ),
                         label: const Text(
                           'VOLVER AL LOGIN',
                           style: TextStyle(

@@ -13,8 +13,7 @@ dependencies:
   bloc: ^9.2.1
   equatable: ^3.0.0
   flutter_bloc: ^9.1.1
-  # path: ^1.8.0
-
+  font_awesome_flutter: ^11.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

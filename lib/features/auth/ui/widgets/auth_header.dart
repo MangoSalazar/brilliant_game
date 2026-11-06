@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class AuthHeader extends StatelessWidget {
   const AuthHeader({super.key});
@@ -7,30 +8,30 @@ class AuthHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Ícono / Emblema de dados brillantes
+        // Ícono / Emblema de dados estilizados
         Container(
-          width: 76,
-          height: 76,
+          width: 78,
+          height: 78,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF7C3AED), Color(0xFF2563EB)],
+              colors: [Color(0xFF8B5CF6), Color(0xFF2563EB)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF7C3AED).withValues(alpha: 0.35),
-                blurRadius: 20,
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.45),
+                blurRadius: 24,
                 offset: const Offset(0, 8),
               ),
             ],
           ),
           child: const Center(
-            child: Icon(
-              Icons.casino_rounded,
+            child: FaIcon(
+              FontAwesomeIcons.diceD6,
               color: Colors.white,
-              size: 42,
+              size: 38,
             ),
           ),
         ),
