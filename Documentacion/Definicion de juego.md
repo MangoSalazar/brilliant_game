@@ -5,9 +5,9 @@
 
 Está concebido para partidas **multijugador** competitivas en red bajo una arquitectura **Cliente-Servidor**, donde cada jugador compite sobre su propia copia idéntica de un tablero seleccionado, buscando completar regiones y acumular puntos antes que sus contrincantes.
 
-- **Plataforma:** Dispositivos móviles (Android / iOS).
+- **Plataforma:** Dispositivos móviles (Android / iOS) y Web.
 - **Tecnología:** Dart & Flutter (arquitectura con BLoC y comunicación en tiempo real con servidor).
-- **Modalidad:** Multijugador en red (hasta 6 jugadores por sala, cada uno con su tablero independiente).
+- **Modalidad:** Multijugador en red global por Internet / WAN (hasta 6 jugadores por sala, cada uno con su tablero independiente). Los usuarios pueden conectarse y jugar simultáneamente desde cualquier lugar del mundo.
 - **Condición de victoria:** La partida termina en cuanto un jugador alcanza **21 o más puntos**. Gana quien cumpla esta condición primero.
 
 ---
@@ -17,15 +17,17 @@ Está concebido para partidas **multijugador** competitivas en red bajo una arqu
 El sistema se divide formalmente en dos capas independientes y desacopladas:
 
 1. **Servidor (Backend & Persistencia):**
+   - **Accesibilidad Global en Internet (WAN):** El servidor debe estar expuesto públicamente a través de Internet (nube, VPS, IP pública o túnel seguro) para permitir el acceso ininterrumpido desde cualquier ubicación geográfica del mundo, sin limitarse a una red de área local (LAN).
    - **Almacenamiento de Datos:** Base de datos para persistir cuentas de usuario, contraseñas seguras y registros de partidas.
    - **Servicio de Autenticación:** Verificación de credenciales (usuario y contraseña) antes de permitir el acceso a las funciones multijugador.
    - **Gestión de Salas (Lobbies):** Creación, sincronización de estados de jugadores, control del rol de Game Master y validación de reglas de inicio.
    - **Motor de Azar Autorizado:** El servidor es la única entidad responsable de lanzar los dados en cada ronda para garantizar partidas justas e invulnerables a trampas locales.
 
-2. **Cliente (App Móvil):**
+2. **Cliente (App Móvil / Web):**
    - Interfaz de usuario para autenticación, gestión de sala y visualización interactiva del tablero.
+   - Configuración de conexión remota flexible para apuntar al dominio o IP pública del servidor desplegado en la nube.
    - Motor local de validación de reglas de colocación de números y cálculo de estados mediante BLoC.
-   - Comunicación en tiempo real con el servidor (WebSockets o sockets bidireccionales).
+   - Comunicación en tiempo real con el servidor (WebSockets o sockets bidireccionales sobre WSS/WS).
 
 ---
 

@@ -11,6 +11,7 @@ El servidor de Brilliant Game actúa como una **autoridad centralizada** encarga
 2. **Control de Lobbies en Tiempo Real:** Administrar las salas de juego activas, generación de códigos únicos de 5 dígitos, sincronización de estados ("Listo"), permisos de Game Master y expulsión de jugadores.
 3. **Motor Central de Azar y Rondas:** Realizar la tirada autoritativa de dados globales en cada ronda y sincronizarla con todos los tableros réplica.
 4. **Árbitro de Partida:** Registrar regiones completadas, adjudicar puntuaciones por orden de llegada y resolver empates en la misma ronda.
+5. **Accesibilidad e Interconexión Global (Internet / WAN):** Proveer conectividad abierta hacia Internet para permitir que cualquier jugador del mundo pueda conectarse, registrarse, unirse a salas y disputar partidas en tiempo real sin restricción a redes de área local (LAN).
 
 ---
 
@@ -170,3 +171,33 @@ Todas las comunicaciones se realizan mediante JSON estructurado con `action` (o 
 2. **Desconexiones Inesperadas:**
    - Si un jugador pierde la conexión en el lobby, se marca como no listo o se remueve si pasa el tiempo de gracia.
    - Si el Game Master se desconecta en el lobby, la sala asigna automáticamente el rol de anfitrión al siguiente jugador más antiguo.
+
+---
+
+## 8. Despliegue y Accesibilidad Global (Acceso WAN / Internet)
+
+Para dar cumplimiento al requisito de que **cualquier usuario pueda acceder al servidor desde cualquier parte del mundo**, el backend debe operar sobre la red pública (WAN / Internet) y no limitarse a un entorno cerrado local (`localhost` o red Wi-Fi local).
+
+### 8.1. Estrategias de Despliegue Público
+1. **Hosting en la Nube / VPS (Producción):**
+   - Despliegue en proveedores PaaS / IaaS como **Render**, **Railway**, **Fly.io**, **DigitalOcean** o **AWS/GCP**.
+   - El servidor Shelf se ejecuta como proceso de fondo o contenedor Docker (`dart:stable`), escuchando en el puerto asignado (por defecto `PORT` de entorno o `8080`).
+   - Se le asigna un nombre de dominio o subdominio público accesible mundialmente (ej. `https://brilliant-game.onrender.com`).
+2. **Túnel Seguro para Desarrollo y Evaluaciones (Testing Remoto):**
+   - Utilización de herramientas de túnel cifrado (como **Cloudflare Tunnels** o **ngrok**) para exponer la instancia local de Shelf a una URL pública segura (`https://...` y `wss://...`).
+   - Permite pruebas inmediatas desde dispositivos móviles externos o evaluadores remotos sin necesidad de configurar firewalls domésticos.
+3. **Servidor Propio con IP Pública (On-Premise):**
+   - Configuración de reenvío de puertos (Port Forwarding) en el router y DNS Dinámico (DDNS) en caso de disponer de IP pública.
+
+### 8.2. Requisitos de Red y Seguridad para Conectividad Global
+- **Cifrado en Tránsito (HTTPS y WSS):**
+  - Todas las comunicaciones por Internet deben viajar cifradas vía TLS/SSL.
+  - La versión Web del juego (en navegadores como Chrome o Edge) bloquea conexiones HTTP o WS planas si la app se sirve bajo HTTPS (política de *mixed content*).
+- **CORS (Cross-Origin Resource Sharing):**
+  - El middleware de Shelf debe configurar encabezados permisivos (`Access-Control-Allow-Origin: *`) para aceptar peticiones provenientes de clientes web alojados en cualquier dominio o emuladores remotos.
+- **Tolerancia a Latencia y Pings de Mantenimiento (Heartbeats):**
+  - En conexiones transcontinentales, los firewalls y routers NAT intermedios suelen cerrar conexiones WebSocket inactivas.
+  - El servidor y los clientes deben implementar un intervalo de latido (`pingInterval: Duration(seconds: 30)`) para asegurar que la conexión en tiempo real permanezca abierta.
+- **Configuración Dinámica en el Cliente Flutter:**
+  - El cliente móvil y web no debe tener URLs cableadas (`hardcoded`).
+  - Se utiliza una clase de configuración (o variables de compilación `--dart-define=SERVER_URL=...`) para alternar fácilmente entre la URL local de desarrollo y la URL pública global en producción.

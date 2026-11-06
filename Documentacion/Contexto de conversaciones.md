@@ -105,6 +105,21 @@ Este archivo mantiene el historial cronológico, el contexto acumulado de las co
 
 ---
 
+### Sesión: 6 de Noviembre de 2026
+
+#### 1. Requerimiento Académico: Accesibilidad Global del Servidor (WAN / Internet)
+- Se incorporó formalmente a la documentación técnica el requerimiento establecido por el profesor: **el servidor debe ser accesible por cualquier usuario desde cualquier parte del mundo**, trascendiendo el ámbito de red de área local (LAN o `localhost`).
+- **Actualización de Documentación:**
+  - `Documentacion/Definicion de juego.md`: Se especificó la modalidad multijugador en red global por Internet (WAN), el rol del servidor como servicio público y la flexibilidad del cliente para conectarse a endpoints remotos.
+  - `Documentacion/Arquitectura Servidor Shelf.md`: Se añadió la sección *8. Despliegue y Accesibilidad Global (Acceso WAN / Internet)* detallando:
+    - Opciones de hosting en la nube (Render, Railway, Fly.io, DigitalOcean, VPS con Docker) y túneles seguros para pruebas remotas (Cloudflare Tunnels, ngrok).
+    - Protocolos obligatorios HTTPS y WSS para evitar restricciones de navegadores y firewalls móviles.
+    - Configuración de CORS universal.
+    - Mecanismo de *heartbeats* (`pingInterval` de 30s) en WebSockets para mantener vivas las conexiones en rutas geográficas de larga distancia.
+    - Parametrización dinámica de la URL del servidor en el cliente Flutter.
+
+---
+
 ## 🎯 Siguientes Pasos
 1. Implementar el Menú Principal (opciones "Crear Partida" y "Unirse a Partida" con modal para el código de 5 dígitos).
 2. Desarrollar la pantalla de Sala de Espera / Lobby (selector de mapas, lista de jugadores con indicador verde "Listo", botón de inicio y expulsión de jugadores).
