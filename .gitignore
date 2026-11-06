@@ -4,3 +4,6 @@
 build/
 
 .obsidian/
+.idea/
+.metadata
+*.iml

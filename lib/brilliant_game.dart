@@ -1,5 +1,5 @@
 /// Librería de lógica interna para Brilliant Game.
-library brilliant_game;
+library;
 
 export 'constantes.dart';
 export 'region.dart';

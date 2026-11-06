@@ -86,11 +86,19 @@ Este archivo mantiene el historial cronológico, el contexto acumulado de las co
 - Se actualizó formalmente `Documentacion/Definicion de juego.md` reflejando la nueva arquitectura cliente-servidor, flujos de autenticación, gestión de salas, dados centralizados y nuevos requerimientos técnicos.
 - Se seleccionó **Shelf** como tecnología del servidor backend y se redactó la especificación técnica completa en `Documentacion/Arquitectura Servidor Shelf.md` (REST, WebSockets, JWT, SQLite y gestión de salas en memoria).
 
+#### 5. Implementación de Interfaz de Autenticación y Pantalla WIP
+- Se implementó la arquitectura limpia para autenticación:
+  - Modelo `Usuario` y contrato abstracto `AuthRepository`.
+  - Repositorio `LocalAuthRepository` con cuentas de prueba (`jugador1` / `Password123`, `admin` / `Admin123`) y almacenamiento de nuevos usuarios registrados.
+  - Gestión de estado con `AuthBloc` (eventos `AuthModeChanged`, `AuthLoginRequested`, `AuthRegisterRequested`, `AuthLogoutRequested`).
+- Interfaz gráfica (UI):
+  - `AuthScreen`: Selector de pestañas ("Iniciar Sesión" y "Crear Cuenta"), campos estilizados con feedback de visibilidad de contraseña, validaciones reactivas y banner de errores.
+  - `WipScreen`: Pantalla de destino post-autenticación con el indicador de "🚧 WIP 🚧", badge del usuario autenticado y botón para cerrar sesión.
+- Se añadieron runners de plataforma para Flutter (Windows y Android) y pruebas unitarias/de widgets completas (`test/auth_bloc_test.dart`, `test/widget_test.dart`), alcanzando 47 tests aprobados sin advertencias de análisis.
+
 ---
 
 ## 🎯 Siguientes Pasos
-1. Diseñar detalladamente la interfaz gráfica del Login y Registro (sin implementar código aún).
-2. Estructurar el espacio de trabajo monorepo (`client`, `server`, `shared`) o paquetes modulares en Dart.
-3. Actualizar `ConstantesJuego` con los parámetros de sala (código de 5 dígitos, max 6 jugadores).
-4. Implementar los modelos de `Usuario`, `Sala` / `Lobby`, `JugadorSala` y sus BLoCs (`AuthBloc`, `LobbyBloc`).
-5. Modelar los 4 mapas oficiales y el motor de tirada compartida de dados en el servidor.
+1. Implementar el Menú Principal (opciones "Crear Partida" y "Unirse a Partida" con modal para el código de 5 dígitos).
+2. Desarrollar la pantalla de Sala de Espera / Lobby (selector de mapas, lista de jugadores con indicador verde "Listo", botón de inicio y expulsión de jugadores).
+3. Construir el backend en Shelf (`packages/server`) conectando los endpoints REST de autenticación y el handler de WebSockets para salas en tiempo real.
