@@ -4,7 +4,7 @@ import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/bloc/auth_state.dart';
 import 'features/auth/repositories/auth_repository.dart';
 import 'features/auth/ui/auth_screen.dart';
-import 'features/home/ui/wip_screen.dart';
+import 'features/menu/ui/main_menu_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,7 +41,7 @@ class BrilliantApp extends StatelessWidget {
         home: BlocBuilder<AuthBloc, AuthState>(
           builder: (context, state) {
             if (state.isAuthenticated) {
-              return WipScreen(usuario: state.usuario!);
+              return MainMenuScreen(usuario: state.usuario!);
             }
             return const AuthScreen();
           },

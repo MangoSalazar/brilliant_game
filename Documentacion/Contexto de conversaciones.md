@@ -118,9 +118,19 @@ Este archivo mantiene el historial cronológico, el contexto acumulado de las co
     - Mecanismo de *heartbeats* (`pingInterval` de 30s) en WebSockets para mantener vivas las conexiones en rutas geográficas de larga distancia.
     - Parametrización dinámica de la URL del servidor en el cliente Flutter.
 
+#### 2. Implementación del Menú Principal y Modal de Código de 5 Dígitos
+- Se implementó la interfaz gráfica del Menú Principal ([`MainMenuScreen`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/menu/ui/main_menu_screen.dart)) en sustitución de la pantalla provisional WIP:
+  - Header con isotipo, badge del usuario autenticado y botón para cerrar sesión integrado con [`AuthBloc`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/auth/bloc/auth_bloc.dart).
+  - Opción destacada **"Crear Partida"** ([`MenuActionCard`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/menu/ui/widgets/menu_action_card.dart)) asignando el rol de Game Master y generando el código numérico de 5 dígitos para compartir.
+  - Opción destacada **"Unirse a Partida"** que despliega el modal interactivo [`JoinRoomDialog`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/menu/ui/widgets/join_room_dialog.dart), con validación reactiva de exactamente 5 dígitos numéricos y teclado especializado.
+  - Componente informativo [`GameInfoBanner`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/menu/ui/widgets/game_info_banner.dart) con los parámetros clave (21+ pts para ganar, hasta 6 jugadores, 2 dados globales, 4 mapas).
+  - Badge contextual de Conexión Global WAN clarificando que el código de 5 dígitos funciona a través de Internet con amigos en cualquier país.
+- Pruebas y Calidad:
+  - Se implementó la suite completa de tests de widgets en `test/main_menu_test.dart`.
+  - Se alcanzaron 52 pruebas aprobadas con cero advertencias en `flutter analyze`.
+
 ---
 
 ## 🎯 Siguientes Pasos
-1. Implementar el Menú Principal (opciones "Crear Partida" y "Unirse a Partida" con modal para el código de 5 dígitos).
-2. Desarrollar la pantalla de Sala de Espera / Lobby (selector de mapas, lista de jugadores con indicador verde "Listo", botón de inicio y expulsión de jugadores).
-3. Construir el backend en Shelf (`packages/server`) conectando los endpoints REST de autenticación y el handler de WebSockets para salas en tiempo real.
+1. Desarrollar la pantalla de Sala de Espera / Lobby (selector de los 4 mapas, listado de jugadores en tiempo real con indicador verde "Listo", expulsión de participantes y control de inicio por el Game Master).
+2. Construir el backend en Shelf (`packages/server`) conectando los endpoints REST de autenticación y el handler de WebSockets para sincronizar las salas por el código de 5 dígitos.
