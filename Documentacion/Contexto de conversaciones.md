@@ -84,12 +84,13 @@ Este archivo mantiene el historial cronológico, el contexto acumulado de las co
 
 #### 4. Actualización Documental
 - Se actualizó formalmente `Documentacion/Definicion de juego.md` reflejando la nueva arquitectura cliente-servidor, flujos de autenticación, gestión de salas, dados centralizados y nuevos requerimientos técnicos.
+- Se seleccionó **Shelf** como tecnología del servidor backend y se redactó la especificación técnica completa en `Documentacion/Arquitectura Servidor Shelf.md` (REST, WebSockets, JWT, SQLite y gestión de salas en memoria).
 
 ---
 
 ## 🎯 Siguientes Pasos
-1. Definir la tecnología del Servidor y Base de Datos (e.g. backend en Dart con WebSockets + SQLite/PostgreSQL o BaaS).
-2. Estructurar el espacio de trabajo monorepo (`client`, `server`, `shared_logic`) o paquetes modulares en Dart.
+1. Diseñar detalladamente la interfaz gráfica del Login y Registro (sin implementar código aún).
+2. Estructurar el espacio de trabajo monorepo (`client`, `server`, `shared`) o paquetes modulares en Dart.
 3. Actualizar `ConstantesJuego` con los parámetros de sala (código de 5 dígitos, max 6 jugadores).
 4. Implementar los modelos de `Usuario`, `Sala` / `Lobby`, `JugadorSala` y sus BLoCs (`AuthBloc`, `LobbyBloc`).
 5. Modelar los 4 mapas oficiales y el motor de tirada compartida de dados en el servidor.
