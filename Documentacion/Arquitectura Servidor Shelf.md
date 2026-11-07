@@ -10,7 +10,7 @@ El servidor de Brilliant Game actúa como una **autoridad centralizada** encarga
 1. **Persistencia y Autenticación:** Gestionar el ciclo de vida de las cuentas de usuario y validar credenciales antes del ingreso a salas.
 2. **Control de Lobbies en Tiempo Real:** Administrar las salas de juego activas, generación de códigos únicos de 5 dígitos, sincronización de estados ("Listo"), permisos de Game Master y expulsión de jugadores.
 3. **Motor Central de Azar y Rondas:** Realizar la tirada autoritativa de dados globales en cada ronda y sincronizarla con todos los tableros réplica.
-4. **Árbitro de Partida:** Registrar regiones completadas, adjudicar puntuaciones por orden de llegada y resolver empates en la misma ronda.
+4. **Árbitro de Partida, Puntuaciones y Ganador:** Recibir las notificaciones de regiones llenas emitidas por los clientes, adjudicar los puestos y puntuaciones por orden de llegada (1.º, 2.º, 3.er lugar y resolución de empates de ronda), comunicar en tiempo real los puntajes actualizados a todos los participantes y declarar oficialmente al ganador cuando se alcanza la condición de 21 o más puntos.
 5. **Accesibilidad e Interconexión Global (Internet / WAN):** Proveer conectividad abierta hacia Internet para permitir que cualquier jugador del mundo pueda conectarse, registrarse, unirse a salas y disputar partidas en tiempo real sin restricción a redes de área local (LAN).
 
 ---
@@ -152,14 +152,18 @@ Todas las comunicaciones se realizan mediante JSON estructurado con `action` (o 
 | `kick_player` | `{ "target_player_id": "..." }` | `player_kicked` al afectado y actualización al resto |
 | `start_game` | `{}` | `game_started` (inicia fase de setup para todos) |
 
-### 6.2. Acciones del Ciclo de Gameplay
+### 6.2. Acciones del Ciclo de Gameplay (Delimitación de Responsabilidades)
 
-| Acción (Cliente -> Servidor) | Payload | Respuesta / Broadcast del Servidor |
+El cliente gestiona el acomodo local de los números en su tablero y la validación de adyacencia/reglas de región. El servidor se encarga de lanzar los dados, adjudicar y comunicar los puntos, y declarar al ganador.
+
+| Acción (Emisor -> Receptor) | Payload | Propósito y Respuesta del Servidor |
 | :--- | :--- | :--- |
-| *Automático por Servidor* | — | `dice_rolled`: `{ "dado1": 4, "dado2": 6, "ronda": 1 }` |
-| `submit_placement` | `{ "ancla": 4, "x": 3, "y": 2, "valor": 6 }` | Valida jugada, actualiza tablero y emite `placement_confirmed` |
-| `pass_turn` | `{}` | `player_passed` |
-| `round_ended` | *Disparado por Servidor* | Calcula regiones completadas, empates y puntajes acumulados |
+| *Servidor -> Clientes* (`dice_rolled`) | `{ "dado1": 4, "dado2": 6, "ronda": 1 }` | **Tirada Centralizada:** El servidor lanza los dados e informa a todos los jugadores al iniciar la ronda. |
+| `region_completed` (Cliente -> Servidor) | `{ "region_tipo": "Rojo", "ronda": 1 }` | **Notificación de Zona Llena:** El cliente avisa que ha llenado por completo una región en su tablero. |
+| `pass_turn` (Cliente -> Servidor) | `{ "ronda": 1 }` | El jugador decide o se ve forzado a pasar su turno en la ronda actual. |
+| `turn_completed` (Cliente -> Servidor) | `{ "ronda": 1 }` | El cliente confirma que finalizó su acomodo de número en la ronda. |
+| *Servidor -> Clientes* (`scores_updated`) | `{ "puntuaciones": { "usr_1": 8, "usr_2": 6 }, "regiones_cerradas": [...] }` | **Comunicación de Puntos:** El servidor calcula los puestos obtenidos (1.º, 2.º, 3.º o empates) y difunde la tabla general actualizada. |
+| *Servidor -> Clientes* (`game_over`) | `{ "ganador_id": "usr_1", "puntos": 22 }` | **Declaración de Ganador:** El servidor evalúa la condición de 21+ puntos y proclama al ganador de la partida. |
 
 ---
 

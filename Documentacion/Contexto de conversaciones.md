@@ -135,6 +135,25 @@ Este archivo mantiene el historial cronológico, el contexto acumulado de las co
 
 ---
 
+### Sesión: 7 de Noviembre de 2026
+
+#### 1. Delimitación de Responsabilidades Cliente - Servidor
+A requerimiento explícito del diseño de arquitectura, se formalizó y delimitó con precisión el reparto de responsabilidades operativas entre el cliente y el servidor:
+- **Responsabilidad del Servidor:**
+  - **Tirada Centralizada de Dados:** El servidor es la única entidad encargada de generar autoritativamente la tirada de los 2 dados al inicio de cada ronda y comunicar el resultado idéntico a todos los jugadores (`dice_rolled`).
+  - **Arbitraje y Comunicación de Puntos:** Recibe las notificaciones de zonas llenadas por los jugadores, adjudica los puestos en la carrera por regiones (1.º, 2.º, 3.er lugar y resolución de empates en la misma ronda) y transmite la tabla general de puntuaciones actualizada en tiempo real (`scores_updated`).
+  - **Declaración del Ganador:** Evalúa la condición de fin de partida (alcanzar 21 o más puntos) y proclama oficialmente al jugador ganador ante toda la sala (`game_over`).
+- **Responsabilidad del Cliente:**
+  - **Acomodo de Números en Tablero:** El jugador selecciona autónomamente el dado ancla y ubica el segundo dado en casillas válidas. El cliente valida localmente las reglas de adyacencia ortogonal y restricciones del color de la región mediante su BLoC.
+  - **Notificación de Zona Llena:** En el momento exacto en que una jugada completa el 100% de las casillas de una región, el cliente emite de forma inmediata un evento al servidor (`region_completed`) solicitando los puntos de dicha zona.
+  - **Confirmación de Acción:** Informa al servidor cuando ha colocado su número (`turn_completed`) o cuando decide pasar el turno (`pass_turn`).
+
+#### 2. Actualización de Documentación Técnica
+- Se actualizaron las secciones 2, 5 y 9 de [`Definicion de juego.md`](file:///C:/Users/Manguito/Documents/brilliant_game/Documentacion/Definicion%20de%20juego.md).
+- Se actualizaron las secciones 1 y 6.2 del protocolo WebSocket en [`Arquitectura Servidor Shelf.md`](file:///C:/Users/Manguito/Documents/brilliant_game/Documentacion/Arquitectura%20Servidor%20Shelf.md).
+
+---
+
 ## 🎯 Siguientes Pasos
 1. Desarrollar la pantalla de Sala de Espera / Lobby (selector de los 4 mapas, listado de jugadores en tiempo real con indicador verde "Listo", expulsión de participantes y control de inicio por el Game Master).
 2. Construir el backend en Shelf (`packages/server`) conectando los endpoints REST de autenticación y el handler de WebSockets para sincronizar las salas por el código de 5 dígitos.

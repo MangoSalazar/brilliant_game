@@ -21,13 +21,15 @@ El sistema se divide formalmente en dos capas independientes y desacopladas:
    - **Almacenamiento de Datos:** Base de datos para persistir cuentas de usuario, contraseñas seguras y registros de partidas.
    - **Servicio de Autenticación:** Verificación de credenciales (usuario y contraseña) antes de permitir el acceso a las funciones multijugador.
    - **Gestión de Salas (Lobbies):** Creación, sincronización de estados de jugadores, control del rol de Game Master y validación de reglas de inicio.
-   - **Motor de Azar Autorizado:** El servidor es la única entidad responsable de lanzar los dados en cada ronda para garantizar partidas justas e invulnerables a trampas locales.
+   - **Tirada Centralizada de Dados (Motor de Azar):** El servidor es la única entidad responsable de generar autoritativamente la tirada de los 2 dados en cada ronda y transmitir el resultado exacto a todos los clientes.
+   - **Adjudicación de Puntos y Declaración de Ganador:** El servidor recibe las notificaciones de regiones completadas emitidas por los clientes, calcula las posiciones y asigna los puntos (1.º, 2.º y 3.er lugar, gestionando empates de ronda), difunde la tabla de puntuaciones en tiempo real a todos los jugadores y es la autoridad exclusiva que evalúa y proclama al ganador en cuanto se alcanza la condición de victoria (21 o más puntos).
 
 2. **Cliente (App Móvil / Web):**
-   - Interfaz de usuario para autenticación, gestión de sala y visualización interactiva del tablero.
+   - Interfaz de usuario para autenticación, gestión de sala y visualización interactiva del tablero réplica.
    - Configuración de conexión remota flexible para apuntar al dominio o IP pública del servidor desplegado en la nube.
-   - Motor local de validación de reglas de colocación de números y cálculo de estados mediante BLoC.
-   - Comunicación en tiempo real con el servidor (WebSockets o sockets bidireccionales sobre WSS/WS).
+   - **Acomodo de Números y Validación Local:** El cliente es el encargado de procesar la selección del dado ancla y el acomodo del segundo dado en la casilla elegida por el jugador, validando localmente mediante BLoC las reglas de adyacencia ortogonal y restricciones del color de la región.
+   - **Notificación de Zona Completada:** En el momento exacto en que una jugada completa una zona/región (todas sus casillas válidamente llenas), el cliente se encarga de comunicarlo de inmediato al servidor para solicitar la adjudicación de puntos de carrera.
+   - Comunicación en tiempo real con el servidor mediante WebSockets persistentes (WSS/WS).
 
 ---
 
@@ -91,16 +93,17 @@ Una vez autenticado, el jugador dispone de dos opciones principales:
 
 ### Fase 2: Rondas de Juego (Gameplay Simultáneo con Dados Centralizados)
 En cada ronda:
-1. **Lanzamiento Global:** El servidor genera el resultado de los 2 dados y lo retransmite simultáneamente a todos los clientes.
-2. **Elección Individual del Dado Ancla:**
-   - Cada jugador evalúa los dos números y decide libre e individualmente cuál de ellos utilizará como **dado ancla**.
-   - El valor elegido como ancla debe coincidir con un número que el jugador **ya tenga escrito en su tablero**.
-3. **Colocación del Dado No Ancla:**
-   - El valor del segundo dado (no ancla) es el número a ingresar.
-   - **Regla de adyacencia:** Debe posicionarse en una celda vacía **ortogonalmente adyacente** (arriba, abajo, izquierda, derecha) a alguna casilla que contenga el número ancla seleccionado.
-   - **Regla de región:** La celda seleccionada debe cumplir las restricciones del color de su región.
-4. **Pase de Ronda:** Si un jugador no puede o no desea colocar el número, puede pasar su turno (`PassTurn`).
-5. **Cierre de Ronda y Puntuaciones:** El servidor recopila las regiones completadas durante la ronda para adjudicar puntos y resolver empates de ronda antes de pasar a la siguiente tirada.
+1. **Lanzamiento Global (Servidor):** El servidor genera autoritativamente el resultado de los 2 dados y lo retransmite simultáneamente a todos los clientes.
+2. **Elección Individual del Dado Ancla y Acomodo (Cliente):**
+   - Cada jugador evalúa los dos números y decide libre e individualmente cuál de ellos utilizará como **dado ancla** (cuyo valor ya debe figurar en su tablero).
+   - El cliente acomoda el valor del segundo dado (no ancla) en una celda vacía válida cumpliendo la regla de adyacencia ortogonal y las restricciones del color de la región.
+3. **Notificación de Zona Completada (Cliente -> Servidor):**
+   - Si la colocación del número llena por completo la última casilla de una región, el cliente emite de inmediato un mensaje al servidor notificando la completitud de dicha zona.
+4. **Pase o Confirmación de Turno de Ronda (Cliente):**
+   - Si un jugador no puede o no desea colocar el número, puede pasar su turno (`PassTurn`). Una vez colocado el número o pasado el turno, el cliente notifica al servidor que ha finalizado su jugada de la ronda.
+5. **Cierre de Ronda, Puntuaciones y Ganador (Servidor -> Clientes):**
+   - El servidor recopila las notificaciones de regiones completadas durante la ronda, asigna las posiciones (1.º, 2.º y 3.er lugar y resolución de empates de ronda) y comunica la tabla de puntuaciones actualizada a todos los participantes.
+   - Si algún jugador alcanza **21 o más puntos**, el servidor proclama oficialmente al ganador y finaliza la partida.
 
 ---
 
@@ -186,18 +189,20 @@ Para el funcionamiento integral del sistema (Cliente y Servidor), se definen las
      - `cambiarEstadoListo(jugadorId, bool listo)`: Alterna el estado (iluminación verde).
      - `iniciarPartida()`: Solo ejecutable si `jugadores.every((j) => j.esListo)` y solicitado por el Game Master.
 
-3. **Motor Centralizado de Rondas y Dados (Servidor):**
-   - Generación de tirada aleatoria de 2 dados (1-6) por ronda.
-   - Difusión (broadcast) simultánea de los dados a todos los tableros activos.
-   - Sincronización y recopilación de jugadas/pases por ronda para adjudicación equitativa de puntos por regiones.
+3. **Motor Centralizado de Rondas, Dados y Arbitraje (Servidor):**
+   - Generación autoritativa de la tirada aleatoria de 2 dados (1-6) por ronda y difusión simultánea a todos los clientes.
+   - Recepción de las notificaciones de regiones llenas emitidas por los clientes para adjudicar puestos (1.º, 2.º y 3.er lugar) y resolver empates de ronda.
+   - Cálculo y difusión en tiempo real de la tabla general de puntuaciones.
+   - Evaluación de la condición de victoria (21+ puntos) y proclamación oficial del ganador.
 
-4. **Gestión de Tablero y Regiones (Cliente / Lógica Compartida):**
+4. **Gestión de Tablero, Acomodo y Regiones (Cliente / Lógica Compartida):**
    - Matriz de `Casilla(x, y, valor)`.
    - `GrupoRegion` y polimorfismo de `Region` (`TipoRojo`, `TipoAmarillo`, `TipoMorado`, `TipoAzul`, `TipoVerde`, `TipoGris`, `TipoNaranjaAlto`, `TipoNaranjaBajo`).
-   - Validación de adyacencia ortogonal respecto al ancla y validación de reglas de color.
+   - Acomodo de números en el tablero: validación de adyacencia ortogonal respecto al ancla y validación de reglas de color.
+   - Detección inmediata del llenado de una región y envío del evento de notificación hacia el servidor.
 
 5. **Ciclo de Estados y Eventos (BLoC):**
    - **`AuthBloc`:** Gestiona estados de `NoAutenticado`, `Autenticando`, `Autenticado`, `ErrorAutenticacion`.
    - **`LobbyBloc`:** Administra la creación de sala, unirse por código de 5 dígitos, selección de mapa por el host, expulsión de participantes, alternancia del estado listo e inicio de partida.
    - **`SetupBloc`:** Administra la colocación de los 6 números iniciales distintos (1-6) en las casillas correspondientes del mapa réplica.
-   - **`GamePlayBloc`:** Controla la recepción de la tirada global del servidor, selección individual del ancla (`SelectAnchor`), colocación del número adyacente (`PlaceNumber`), notificación de regiones completadas, pase de turno (`PassTurn`) y verificación de la condición de victoria (21+ puntos).
+   - **`GamePlayBloc`:** Controla la recepción de la tirada global del servidor, selección individual del ancla (`SelectAnchor`), acomodo del número adyacente (`PlaceNumber`), detección y notificación de zona completada (`RegionCompleted`), confirmación de pase (`PassTurn`) y recepción del estado de victoria/puntuaciones finales enviadas por el servidor.
