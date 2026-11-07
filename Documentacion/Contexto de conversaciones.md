@@ -152,6 +152,9 @@ A requerimiento explícito del diseño de arquitectura, se formalizó y delimit�
 - Se actualizaron las secciones 2, 5 y 9 de [`Definicion de juego.md`](file:///C:/Users/Manguito/Documents/brilliant_game/Documentacion/Definicion%20de%20juego.md).
 - Se actualizaron las secciones 1 y 6.2 del protocolo WebSocket en [`Arquitectura Servidor Shelf.md`](file:///C:/Users/Manguito/Documents/brilliant_game/Documentacion/Arquitectura%20Servidor%20Shelf.md).
 
+#### 3. Creación del Documento Maestro de Asignación de Funciones
+- Se creó el documento formal [`Documentacion/Asignacion de funciones Cliente-Servidor.md`](file:///C:/Users/Manguito/Documents/brilliant_game/Documentacion/Asignacion%20de%20funciones%20Cliente-Servidor.md) que desglosa las 39 funciones del sistema agrupadas en 8 módulos clave (Autenticación, Lobbies, Setup, Dados/Rondas, Acomodo/Tablero, Puntuación/Arbitraje, Victoria/Fin de Partida y Conectividad), incluyendo una matriz de roles y un diagrama de secuencia de una ronda de juego típica.
+
 ---
 
 ## 🎯 Siguientes Pasos
