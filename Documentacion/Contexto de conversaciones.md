@@ -129,6 +129,10 @@ Este archivo mantiene el historial cronológico, el contexto acumulado de las co
   - Se implementó la suite completa de tests de widgets en `test/main_menu_test.dart`.
   - Se alcanzaron 52 pruebas aprobadas con cero advertencias en `flutter analyze`.
 
+#### 3. Configuración Web y Verificación
+- Se añadió `uses-material-design: true` en `pubspec.yaml` para asegurar la resolución de fuentes de iconos en Flutter Web.
+- Se verificó la ejecución exitosa de la aplicación web en desarrollo local y la suite completa de 52 pruebas automatizadas.
+
 ---
 
 ## 🎯 Siguientes Pasos
