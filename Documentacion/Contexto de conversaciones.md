@@ -163,6 +163,8 @@ A requerimiento explícito del diseño de arquitectura, se formalizó y delimit�
 - **Cliente y Sala de Espera ([`LobbyScreen`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/lobby/ui/lobby_screen.dart)):**
   - Se implementaron los modelos [`SalaPartida`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/lobby/models/sala_partida.dart) y [`JugadorSala`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/lobby/models/jugador_sala.dart), el repositorio WebSocket [`WebSocketLobbyRepository`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/lobby/repositories/lobby_repository.dart) y [`LobbyBloc`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/lobby/bloc/lobby_bloc.dart).
   - La pantalla [`LobbyScreen`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/lobby/ui/lobby_screen.dart) visualiza el código de 5 dígitos, selector de los 4 mapas, lista en tiempo real de jugadores conectados iluminando en color verde (`#10B981`) a quienes se marcan como "Listo", botón de expulsión y transición a [`WipScreen`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/home/ui/wip_screen.dart) al iniciar la partida.
+- **Pruebas y Calidad:**
+  - Se implementaron suites de integración y widgets en [`test/server_room_test.dart`](file:///C:/Users/Manguito/Documents/brilliant_game/test/server_room_test.dart) y [`test/lobby_screen_test.dart`](file:///C:/Users/Manguito/Documents/brilliant_game/test/lobby_screen_test.dart), alcanzando **60 pruebas automatizadas aprobadas** y cero advertencias en `flutter analyze`.
 
 ---
 
