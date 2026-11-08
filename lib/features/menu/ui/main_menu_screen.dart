@@ -5,6 +5,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/bloc/auth_event.dart';
 import '../../auth/models/usuario.dart';
+import '../../lobby/bloc/lobby_bloc.dart';
+import '../../lobby/bloc/lobby_event.dart';
 import 'widgets/game_info_banner.dart';
 import 'widgets/join_room_dialog.dart';
 import 'widgets/menu_action_card.dart';
@@ -19,7 +21,15 @@ class MainMenuScreen extends StatelessWidget {
     required this.usuario,
   });
 
-  /// Genera un código de sala numérico simulado de 5 dígitos para pruebas locales.
+  LobbyBloc? _tryReadLobbyBloc(BuildContext context) {
+    try {
+      return context.read<LobbyBloc>();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Genera un código de sala numérico simulado de 5 dígitos para modo aislado de pruebas.
   String _generateRandomRoomCode() {
     final random = Random();
     final code = 10000 + random.nextInt(90000);
@@ -27,6 +37,12 @@ class MainMenuScreen extends StatelessWidget {
   }
 
   void _handleCreateRoom(BuildContext context) {
+    final lobbyBloc = _tryReadLobbyBloc(context);
+    if (lobbyBloc != null) {
+      lobbyBloc.add(LobbyCreateRoomRequested(usuario: usuario));
+      return;
+    }
+
     final roomCode = _generateRandomRoomCode();
     showDialog<void>(
       context: context,
@@ -90,18 +106,6 @@ class MainMenuScreen extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 14),
-            const Center(
-              child: Text(
-                'Próximo paso: Pantalla de Sala de Espera / Lobby (en desarrollo)',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Color(0xFFF59E0B),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
           ],
         ),
         actions: [
@@ -124,6 +128,17 @@ class MainMenuScreen extends StatelessWidget {
   Future<void> _handleJoinRoom(BuildContext context) async {
     final code = await JoinRoomDialog.show(context);
     if (code != null && context.mounted) {
+      final lobbyBloc = _tryReadLobbyBloc(context);
+      if (lobbyBloc != null) {
+        lobbyBloc.add(
+          LobbyJoinRoomRequested(
+            usuario: usuario,
+            codigoSala: code,
+          ),
+        );
+        return;
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: const Color(0xFF1E293B),
@@ -235,6 +250,7 @@ class MainMenuScreen extends StatelessWidget {
             child: IconButton(
               tooltip: 'Cerrar Sesión',
               onPressed: () {
+                _tryReadLobbyBloc(context)?.add(const LobbyLeaveRoomRequested());
                 context.read<AuthBloc>().add(const AuthLogoutRequested());
               },
               icon: const FaIcon(

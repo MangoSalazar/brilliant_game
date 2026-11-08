@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../../../constantes.dart';
 import '../models/usuario.dart';
 
 /// Excepción personalizada para errores del flujo de autenticación.
@@ -29,6 +32,122 @@ abstract class AuthRepository {
 
   /// Retorna el usuario autenticado actualmente en memoria o null si no hay sesión.
   Usuario? get currentUser;
+
+  /// Token de sesión JWT expedido por el servidor (si aplica).
+  String? get currentToken => null;
+}
+
+/// Implementación remota que se comunica por HTTP REST con el Servidor Shelf.
+class RemoteAuthRepository implements AuthRepository {
+  final String baseUrl;
+  final http.Client _httpClient;
+  final LocalAuthRepository _fallbackLocal;
+
+  Usuario? _currentUser;
+  String? _currentToken;
+
+  RemoteAuthRepository({
+    this.baseUrl = const String.fromEnvironment(
+      'SERVER_URL',
+      defaultValue: ConstantesJuego.urlServidorPorDefecto,
+    ),
+    http.Client? httpClient,
+  })  : _httpClient = httpClient ?? http.Client(),
+        _fallbackLocal = LocalAuthRepository(simulatedDelay: Duration.zero);
+
+  @override
+  Usuario? get currentUser => _currentUser;
+
+  @override
+  String? get currentToken => _currentToken;
+
+  @override
+  Future<Usuario> login({
+    required String username,
+    required String password,
+  }) async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/auth/login');
+      final response = await _httpClient
+          .post(
+            uri,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+            body: jsonEncode({
+              'username': username.trim(),
+              'password': password,
+            }),
+          )
+          .timeout(const Duration(seconds: 5));
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode == 200) {
+        _currentToken = data['token'] as String?;
+        _currentUser = Usuario.fromJson(data['usuario'] as Map<String, dynamic>);
+        return _currentUser!;
+      } else {
+        throw AuthException(
+          data['error'] as String? ?? ConstantesJuego.errorCredencialesInvalidas,
+        );
+      }
+    } on AuthException {
+      rethrow;
+    } catch (_) {
+      // Si el servidor Shelf no está encendido aún, usar validación local de respaldo
+      final user = await _fallbackLocal.login(
+        username: username,
+        password: password,
+      );
+      _currentUser = user;
+      return user;
+    }
+  }
+
+  @override
+  Future<Usuario> register({
+    required String username,
+    required String password,
+  }) async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/auth/register');
+      final response = await _httpClient
+          .post(
+            uri,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+            body: jsonEncode({
+              'username': username.trim(),
+              'password': password,
+            }),
+          )
+          .timeout(const Duration(seconds: 5));
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        _currentToken = data['token'] as String?;
+        _currentUser = Usuario.fromJson(data['usuario'] as Map<String, dynamic>);
+        return _currentUser!;
+      } else {
+        throw AuthException(
+          data['error'] as String? ?? 'No fue posible registrar el usuario.',
+        );
+      }
+    } on AuthException {
+      rethrow;
+    } catch (_) {
+      final user = await _fallbackLocal.register(
+        username: username,
+        password: password,
+      );
+      _currentUser = user;
+      return user;
+    }
+  }
+
+  @override
+  Future<void> logout() async {
+    _currentUser = null;
+    _currentToken = null;
+    await _fallbackLocal.logout();
+  }
 }
 
 /// Implementación local / en memoria de autenticación para desarrollo y pruebas.
@@ -41,9 +160,12 @@ class LocalAuthRepository implements AuthRepository {
   });
 
   final Map<String, String> _usersDb = {
-    // Usuario de prueba precargado
+    // Usuarios de prueba precargados
+    'mango': 'mango123',
+    'mango2': 'mango123',
     'jugador1': 'Password123',
-    'admin': 'Admin123',
+    'jugador2': 'Password123',
+    'admin': 'admin123',
   };
 
   Usuario? _currentUser;
@@ -52,18 +174,22 @@ class LocalAuthRepository implements AuthRepository {
   Usuario? get currentUser => _currentUser;
 
   @override
+  String? get currentToken => null;
+
+  @override
   Future<Usuario> login({
     required String username,
     required String password,
   }) async {
-    // Simular latencia de red si aplica
     if (simulatedDelay > Duration.zero) {
       await Future.delayed(simulatedDelay);
     }
 
     final normalizedUser = username.trim().toLowerCase();
     if (!_usersDb.containsKey(normalizedUser)) {
-      throw const AuthException('Usuario no encontrado. Verifica tus credenciales o regístrate.');
+      throw const AuthException(
+        'Usuario no encontrado. Verifica tus credenciales o regístrate.',
+      );
     }
 
     if (_usersDb[normalizedUser] != password) {
@@ -82,7 +208,6 @@ class LocalAuthRepository implements AuthRepository {
     required String username,
     required String password,
   }) async {
-    // Simular latencia de red si aplica
     if (simulatedDelay > Duration.zero) {
       await Future.delayed(simulatedDelay);
     }
@@ -91,20 +216,28 @@ class LocalAuthRepository implements AuthRepository {
     final normalizedUser = cleanUser.toLowerCase();
 
     if (cleanUser.length < 3 || cleanUser.length > 15) {
-      throw const AuthException('El nombre de usuario debe tener entre 3 y 15 caracteres.');
+      throw const AuthException(
+        'El nombre de usuario debe tener entre 3 y 15 caracteres.',
+      );
     }
 
     final validUsernameRegex = RegExp(r'^[a-zA-Z0-9_]+$');
     if (!validUsernameRegex.hasMatch(cleanUser)) {
-      throw const AuthException('El usuario solo puede contener letras, números y guión bajo.');
+      throw const AuthException(
+        'El usuario solo puede contener letras, números y guión bajo.',
+      );
     }
 
     if (password.length < 6) {
-      throw const AuthException('La contraseña debe tener al menos 6 caracteres.');
+      throw const AuthException(
+        'La contraseña debe tener al menos 6 caracteres.',
+      );
     }
 
     if (_usersDb.containsKey(normalizedUser)) {
-      throw const AuthException('El nombre de usuario ya está registrado. Elige otro.');
+      throw const AuthException(
+        'El nombre de usuario ya está registrado. Elige otro.',
+      );
     }
 
     _usersDb[normalizedUser] = password;

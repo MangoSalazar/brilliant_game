@@ -30,6 +30,34 @@ abstract final class ConstantesJuego {
   /// Longitud exacta en dígitos del código de acceso a la sala.
   static const int longitudCodigoSala = 5;
 
+  /// Puerto por defecto donde escucha el servidor Shelf.
+  static const int puertoServidorPorDefecto = 8080;
+
+  /// URL base HTTP por defecto del servidor para autenticación REST.
+  static const String urlServidorPorDefecto = 'http://localhost:8080';
+
+  /// URL WebSocket por defecto del servidor para salas y partidas en tiempo real.
+  static const String wsServidorPorDefecto = 'ws://localhost:8080/ws';
+
+  // ==========================================
+  // Acciones y Eventos del Protocolo WebSocket
+  // ==========================================
+  static const String wsAccionCrearSala = 'create_room';
+  static const String wsAccionUnirseSala = 'join_room';
+  static const String wsAccionSeleccionarMapa = 'select_map';
+  static const String wsAccionAlternarListo = 'toggle_ready';
+  static const String wsAccionExpulsarJugador = 'kick_player';
+  static const String wsAccionIniciarPartida = 'start_game';
+  static const String wsAccionSalirSala = 'leave_room';
+  static const String wsAccionPing = 'ping';
+
+  static const String wsEventoSalaCreada = 'room_created';
+  static const String wsEventoSalaActualizada = 'room_updated';
+  static const String wsEventoJugadorExpulsado = 'player_kicked';
+  static const String wsEventoPartidaIniciada = 'game_started';
+  static const String wsEventoError = 'error';
+  static const String wsEventoPong = 'pong';
+
   // ==========================================
   // Dimensiones del Tablero
   // ==========================================

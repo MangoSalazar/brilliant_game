@@ -4,13 +4,18 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/bloc/auth_event.dart';
 import '../../auth/models/usuario.dart';
+import '../../lobby/models/sala_partida.dart';
 
 class WipScreen extends StatelessWidget {
   final Usuario usuario;
+  final SalaPartida? sala;
+  final VoidCallback? onBackToMenu;
 
   const WipScreen({
     super.key,
     required this.usuario,
+    this.sala,
+    this.onBackToMenu,
   });
 
   @override
@@ -58,7 +63,7 @@ class WipScreen extends StatelessWidget {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
+              constraints: const BoxConstraints(maxWidth: 500),
               child: Container(
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
@@ -113,7 +118,7 @@ class WipScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 28),
 
                     // Emblema WIP
                     Container(
@@ -156,7 +161,7 @@ class WipScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'WORK IN PROGRESS • EN DESARROLLO',
+                      'VISUALIZACIÓN DE PARTIDA • EN DESARROLLO',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Color(0xFFF59E0B),
@@ -165,11 +170,46 @@ class WipScreen extends StatelessWidget {
                         letterSpacing: 1.5,
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 18),
+
+                    if (sala != null) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0C0E1A),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFF2B3356)),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              'Sala #${sala!.codigo} • Mapa ${sala!.mapaSeleccionado}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Jugadores sincronizados (${sala!.jugadores.length}): ${sala!.jugadores.map((j) => j.nombre).join(", ")}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Color(0xFF10B981),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                    ],
 
                     // Descripción
                     const Text(
-                      'Has iniciado sesión correctamente. La siguiente sección (Menú Principal, Lobbies con código de 5 dígitos y selección de mapas) se encuentra en desarrollo.',
+                      '¡La sala se ha sincronizado e iniciado con éxito! La visualización interactiva del tablero de partida y tirada de dados se encuentra en desarrollo (WIP).',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Color(0xFF94A3B8),
@@ -177,23 +217,31 @@ class WipScreen extends StatelessWidget {
                         height: 1.5,
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 28),
 
-                    // Botón volver / cerrar sesión
+                    // Botón volver
                     SizedBox(
                       width: double.infinity,
                       height: 48,
                       child: OutlinedButton.icon(
                         onPressed: () {
-                          context.read<AuthBloc>().add(const AuthLogoutRequested());
+                          if (onBackToMenu != null) {
+                            onBackToMenu!();
+                          } else {
+                            context
+                                .read<AuthBloc>()
+                                .add(const AuthLogoutRequested());
+                          }
                         },
                         icon: const FaIcon(
                           FontAwesomeIcons.arrowLeft,
                           size: 15,
                         ),
-                        label: const Text(
-                          'VOLVER AL LOGIN',
-                          style: TextStyle(
+                        label: Text(
+                          onBackToMenu != null
+                              ? 'SALIR DE LA PARTIDA'
+                              : 'VOLVER AL LOGIN',
+                          style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 1,

@@ -155,8 +155,17 @@ A requerimiento explícito del diseño de arquitectura, se formalizó y delimit�
 #### 3. Creación del Documento Maestro de Asignación de Funciones
 - Se creó el documento formal [`Documentacion/Asignacion de funciones Cliente-Servidor.md`](file:///C:/Users/Manguito/Documents/brilliant_game/Documentacion/Asignacion%20de%20funciones%20Cliente-Servidor.md) que desglosa las 39 funciones del sistema agrupadas en 8 módulos clave (Autenticación, Lobbies, Setup, Dados/Rondas, Acomodo/Tablero, Puntuación/Arbitraje, Victoria/Fin de Partida y Conectividad), incluyendo una matriz de roles y un diagrama de secuencia de una ronda de juego típica.
 
+#### 4. Implementación del Servidor Shelf y Sala de Espera (Lobby) en Tiempo Real
+- **Servidor Shelf Independiente ([`bin/server.dart`](file:///C:/Users/Manguito/Documents/brilliant_game/bin/server.dart) y `lib/server/`):**
+  - Se implementó [`BrilliantServerApp`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/server/server_app.dart) con soporte CORS universal, endpoints REST de autenticación (`/api/auth/login`, `/api/auth/register`, `/api/auth/me`) respaldados por [`ServerAuthService`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/server/services/server_auth_service.dart) con hasheo SHA-256.
+  - Se implementó [`RoomManager`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/server/services/room_manager.dart) para gestionar en memoria la creación de salas con código único de 5 dígitos, unión de hasta 6 jugadores, selección de mapa (1 al 4), alternancia de estado "Listo", expulsiones y transferencia automática de Game Master en caso de desconexión.
+  - Se implementó [`LobbyWsHandler`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/server/ws/lobby_ws_handler.dart) sobre WebSockets (`/ws`) para sincronizar instantáneamente a todos los clientes conectados a la misma sala.
+- **Cliente y Sala de Espera ([`LobbyScreen`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/lobby/ui/lobby_screen.dart)):**
+  - Se implementaron los modelos [`SalaPartida`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/lobby/models/sala_partida.dart) y [`JugadorSala`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/lobby/models/jugador_sala.dart), el repositorio WebSocket [`WebSocketLobbyRepository`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/lobby/repositories/lobby_repository.dart) y [`LobbyBloc`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/lobby/bloc/lobby_bloc.dart).
+  - La pantalla [`LobbyScreen`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/lobby/ui/lobby_screen.dart) visualiza el código de 5 dígitos, selector de los 4 mapas, lista en tiempo real de jugadores conectados iluminando en color verde (`#10B981`) a quienes se marcan como "Listo", botón de expulsión y transición a [`WipScreen`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/home/ui/wip_screen.dart) al iniciar la partida.
+
 ---
 
 ## 🎯 Siguientes Pasos
-1. Desarrollar la pantalla de Sala de Espera / Lobby (selector de los 4 mapas, listado de jugadores en tiempo real con indicador verde "Listo", expulsión de participantes y control de inicio por el Game Master).
-2. Construir el backend en Shelf (`packages/server`) conectando los endpoints REST de autenticación y el handler de WebSockets para sincronizar las salas por el código de 5 dígitos.
+1. Desarrollar la interfaz interactiva del tablero de partida (Fase de Setup de los 6 números iniciales y Fase de Rondas con tirada global de dados del servidor).
+2. Integrar en el handler WebSocket del servidor los eventos de partida (`dice_rolled`, `region_completed`, `scores_updated` y `game_over`).
