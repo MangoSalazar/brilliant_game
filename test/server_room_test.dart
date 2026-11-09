@@ -282,5 +282,103 @@ void main() {
       await client1.disconnect();
       await client2.disconnect();
     });
+
+    test(
+      'Permite alternar Listo / No Listo repetidamente y transfiere Game Master con notificación al desconectarse el host',
+      () async {
+        final client1 = WebSocketLobbyRepository(wsBaseUrl: wsBaseUrl);
+        final client2 = WebSocketLobbyRepository(wsBaseUrl: wsBaseUrl);
+
+        const user1 = Usuario(id: 'usr_host', username: 'HostMango');
+        const user2 = Usuario(id: 'usr_guest', username: 'Invitado2');
+
+        await client1.connect(usuario: user1);
+        final roomCreated = Completer<SalaPartida>();
+        final createSub = client1.events.listen((e) {
+          if (e is LobbyRoomSynced && !roomCreated.isCompleted) {
+            roomCreated.complete(e.sala);
+          }
+        });
+        client1.createRoom();
+        final salaInicial =
+            await roomCreated.future.timeout(const Duration(seconds: 5));
+        await createSub.cancel();
+
+        await client2.connect(usuario: user2);
+        final joinedCompleter = Completer<SalaPartida>();
+        final joinSub = client2.events.listen((e) {
+          if (e is LobbyRoomSynced &&
+              e.sala.jugadores.length == 2 &&
+              !joinedCompleter.isCompleted) {
+            joinedCompleter.complete(e.sala);
+          }
+        });
+        client2.joinRoom(salaInicial.codigo);
+        await joinedCompleter.future.timeout(const Duration(seconds: 5));
+        await joinSub.cancel();
+
+        // 1. Invitado2 se marca como Listo y luego cancela su estado Listo
+        final readyTrueCompleter = Completer<SalaPartida>();
+        final readySub1 = client2.events.listen((e) {
+          if (e is LobbyRoomSynced) {
+            final guest =
+                e.sala.jugadores.firstWhere((j) => j.id == 'usr_guest');
+            if (guest.esListo && !readyTrueCompleter.isCompleted) {
+              readyTrueCompleter.complete(e.sala);
+            }
+          }
+        });
+        client2.toggleReady(ready: true);
+        await readyTrueCompleter.future.timeout(const Duration(seconds: 5));
+        await readySub1.cancel();
+
+        final readyFalseCompleter = Completer<SalaPartida>();
+        final readySub2 = client2.events.listen((e) {
+          if (e is LobbyRoomSynced) {
+            final guest =
+                e.sala.jugadores.firstWhere((j) => j.id == 'usr_guest');
+            if (!guest.esListo && !readyFalseCompleter.isCompleted) {
+              readyFalseCompleter.complete(e.sala);
+            }
+          }
+        });
+        client2.toggleReady(ready: false);
+        final salaDesmarcada =
+            await readyFalseCompleter.future.timeout(const Duration(seconds: 5));
+        await readySub2.cancel();
+        expect(
+          salaDesmarcada.jugadores
+              .firstWhere((j) => j.id == 'usr_guest')
+              .esListo,
+          isFalse,
+        );
+
+        // 2. HostMango pierde la conexión -> Invitado2 recibe la sala actualizada siendo el nuevo Game Master y el mensaje de notificación
+        final hostTransferredCompleter = Completer<LobbyRoomSynced>();
+        final transferSub = client2.events.listen((e) {
+          if (e is LobbyRoomSynced &&
+              e.sala.gameMasterId == 'usr_guest' &&
+              !hostTransferredCompleter.isCompleted) {
+            hostTransferredCompleter.complete(e);
+          }
+        });
+
+        await client1.disconnect();
+
+        final syncEvent = await hostTransferredCompleter.future.timeout(
+          const Duration(seconds: 5),
+        );
+        await transferSub.cancel();
+
+        expect(syncEvent.sala.jugadores.length, equals(1));
+        expect(syncEvent.sala.gameMasterId, equals('usr_guest'));
+        expect(syncEvent.sala.jugadores.first.esHost, isTrue);
+        expect(syncEvent.notificacion, isNotNull);
+        expect(syncEvent.notificacion, contains('Invitado2'));
+        expect(syncEvent.notificacion, contains('Game Master'));
+
+        await client2.disconnect();
+      },
+    );
   });
 }

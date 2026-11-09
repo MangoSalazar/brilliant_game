@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
+import '../../auth/models/usuario.dart';
+import '../models/jugador_sala.dart';
+import '../models/sala_partida.dart';
 import '../repositories/lobby_repository.dart';
 import 'lobby_event.dart';
 import 'lobby_state.dart';
@@ -9,6 +12,7 @@ import 'lobby_state.dart';
 class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   final LobbyRepository _lobbyRepository;
   StreamSubscription<LobbyServerEvent>? _eventsSubscription;
+  Usuario? _currentUser;
 
   LobbyBloc({
     required LobbyRepository lobbyRepository,
@@ -22,6 +26,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     on<LobbyStartGameRequested>(_onStartGameRequested);
     on<LobbyLeaveRoomRequested>(_onLeaveRoomRequested);
     on<LobbyClearErrorRequested>(_onClearErrorRequested);
+    on<LobbyClearInfoRequested>(_onClearInfoRequested);
     on<LobbyServerEventReceived>(_onServerEventReceived);
 
     _eventsSubscription = _lobbyRepository.events.listen((serverEvent) {
@@ -33,9 +38,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     LobbyCreateRoomRequested event,
     Emitter<LobbyState> emit,
   ) async {
+    _currentUser = event.usuario;
     emit(state.copyWith(
       status: LobbyStatus.connecting,
       clearError: true,
+      clearInfo: true,
     ));
 
     await _lobbyRepository.connect(
@@ -49,9 +56,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     LobbyJoinRoomRequested event,
     Emitter<LobbyState> emit,
   ) async {
+    _currentUser = event.usuario;
     emit(state.copyWith(
       status: LobbyStatus.connecting,
       clearError: true,
+      clearInfo: true,
     ));
 
     await _lobbyRepository.connect(
@@ -65,7 +74,46 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     LobbyToggleReadyRequested event,
     Emitter<LobbyState> emit,
   ) {
-    _lobbyRepository.toggleReady(ready: event.ready);
+    final salaActual = state.sala;
+    final userId = _currentUser?.id;
+    bool? nuevoValorListo = event.ready;
+
+    if (salaActual != null) {
+      final indice = userId != null
+          ? salaActual.jugadores.indexWhere((j) => j.id == userId)
+          : -1;
+
+      if (indice != -1) {
+        final jugador = salaActual.jugadores[indice];
+        nuevoValorListo ??= !jugador.esListo;
+
+        final jugadoresActualizados =
+            List<JugadorSala>.from(salaActual.jugadores);
+        jugadoresActualizados[indice] = jugador.copyWith(
+          esListo: nuevoValorListo,
+        );
+
+        final todosListos = jugadoresActualizados.isNotEmpty &&
+            jugadoresActualizados.every((j) => j.esListo);
+
+        final salaOptimista = salaActual.copyWith(
+          jugadores: jugadoresActualizados,
+          estadoSala:
+              todosListos ? EstadoSala.todosListos : EstadoSala.esperando,
+        );
+
+        emit(state.copyWith(
+          status: LobbyStatus.inLobby,
+          sala: salaOptimista,
+          clearError: true,
+        ));
+      }
+    }
+
+    _lobbyRepository.toggleReady(
+      ready: nuevoValorListo,
+      roomCode: salaActual?.codigo,
+    );
   }
 
   void _onSelectMapRequested(
@@ -107,17 +155,25 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     ));
   }
 
+  void _onClearInfoRequested(
+    LobbyClearInfoRequested event,
+    Emitter<LobbyState> emit,
+  ) {
+    emit(state.copyWith(clearInfo: true));
+  }
+
   void _onServerEventReceived(
     LobbyServerEventReceived event,
     Emitter<LobbyState> emit,
   ) {
     final serverEvent = event.serverEvent;
     switch (serverEvent) {
-      case LobbyRoomSynced(:final sala):
+      case LobbyRoomSynced(:final sala, :final notificacion):
         emit(LobbyState(
           status: LobbyStatus.inLobby,
           sala: sala,
           errorMessage: null,
+          infoMessage: notificacion,
         ));
         break;
 
@@ -126,6 +182,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           status: LobbyStatus.inGame,
           sala: sala,
           errorMessage: null,
+          infoMessage: null,
         ));
         break;
 
@@ -134,6 +191,16 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           status: LobbyStatus.kicked,
           sala: null,
           errorMessage: mensaje,
+          infoMessage: null,
+        ));
+        break;
+
+      case LobbyConnectionLost(:final mensaje):
+        emit(LobbyState(
+          status: LobbyStatus.error,
+          sala: null,
+          errorMessage: mensaje,
+          infoMessage: null,
         ));
         break;
 

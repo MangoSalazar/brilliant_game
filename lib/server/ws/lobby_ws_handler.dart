@@ -26,8 +26,8 @@ class LobbyWsHandler {
   final RoomManager _roomManager;
   final ServerAuthService _authService;
 
-  /// Sesiones activas indexadas por `userId`.
-  final Map<String, _ClientSession> _sessionsByUserId = {};
+  /// Conjunto de todas las sesiones WebSocket activas.
+  final Set<_ClientSession> _activeSessions = {};
 
   LobbyWsHandler({
     required RoomManager roomManager,
@@ -71,7 +71,7 @@ class LobbyWsHandler {
       channel: channel,
     );
 
-    _sessionsByUserId[userId] = session;
+    _activeSessions.add(session);
 
     channel.stream.listen(
       (dynamic rawMessage) {
@@ -99,12 +99,7 @@ class LobbyWsHandler {
 
     // Permitir actualizar identidad desde el payload si se envía explícitamente
     if (payload['userId'] is String && (payload['userId'] as String).isNotEmpty) {
-      final newId = payload['userId'] as String;
-      if (newId != session.userId) {
-        _sessionsByUserId.remove(session.userId);
-        session.userId = newId;
-        _sessionsByUserId[newId] = session;
-      }
+      session.userId = payload['userId'] as String;
     }
     if (payload['username'] is String &&
         (payload['username'] as String).isNotEmpty) {
@@ -118,7 +113,7 @@ class LobbyWsHandler {
           break;
 
         case ConstantesJuego.wsAccionCrearSala:
-          _salirDeSalaActualSiExiste(session);
+          _salirDeSalaActualSiExiste(session, porDesconexion: false);
           final sala = _roomManager.crearSala(
             jugadorId: session.userId,
             nombreJugador: session.username,
@@ -137,7 +132,7 @@ class LobbyWsHandler {
               .trim();
           if (session.currentRoomCode != null &&
               session.currentRoomCode != codigo) {
-            _salirDeSalaActualSiExiste(session);
+            _salirDeSalaActualSiExiste(session, porDesconexion: false);
           }
           final sala = _roomManager.unirseASala(
             codigo: codigo,
@@ -154,12 +149,14 @@ class LobbyWsHandler {
 
         case ConstantesJuego.wsAccionAlternarListo:
           final codigo = _requireRoomCode(session, payload);
-          final bool? ready = payload['ready'] as bool?;
+          final dynamic rawReady = payload['ready'];
+          final bool? ready = rawReady is bool ? rawReady : null;
           final sala = _roomManager.cambiarEstadoListo(
             codigo: codigo,
             jugadorId: session.userId,
             listo: ready,
           );
+          session.currentRoomCode = sala.codigo;
           _broadcastToRoom(
             sala,
             ConstantesJuego.wsEventoSalaActualizada,
@@ -175,6 +172,7 @@ class LobbyWsHandler {
             solicitanteId: session.userId,
             mapaId: mapaId,
           );
+          session.currentRoomCode = sala.codigo;
           _broadcastToRoom(
             sala,
             ConstantesJuego.wsEventoSalaActualizada,
@@ -194,14 +192,15 @@ class LobbyWsHandler {
           );
 
           // Notificar al jugador expulsado y desvincularlo de la sala
-          final kickedSession = _sessionsByUserId[targetId];
-          if (kickedSession != null) {
-            kickedSession.currentRoomCode = null;
-            _sendToSession(
-              kickedSession,
-              ConstantesJuego.wsEventoJugadorExpulsado,
-              {'mensaje': ConstantesJuego.msgJugadorExpulsado},
-            );
+          for (final targetSession in _activeSessions) {
+            if (targetSession.userId == targetId) {
+              targetSession.currentRoomCode = null;
+              _sendToSession(
+                targetSession,
+                ConstantesJuego.wsEventoJugadorExpulsado,
+                {'mensaje': ConstantesJuego.msgJugadorExpulsado},
+              );
+            }
           }
 
           // Difundir la sala actualizada al resto de integrantes
@@ -226,7 +225,7 @@ class LobbyWsHandler {
           break;
 
         case ConstantesJuego.wsAccionSalirSala:
-          _salirDeSalaActualSiExiste(session);
+          _salirDeSalaActualSiExiste(session, porDesconexion: false);
           break;
 
         default:
@@ -243,42 +242,97 @@ class LobbyWsHandler {
     _ClientSession session,
     Map<String, dynamic> payload,
   ) {
-    final code = (payload['room_code'] ??
+    var code = (payload['room_code'] ??
             payload['codigo'] ??
             session.currentRoomCode ??
             '')
         .toString()
         .trim();
     if (code.isEmpty) {
+      for (final sala in _roomManager.salasActivas) {
+        if (sala.jugadores.any((j) => j.id == session.userId)) {
+          code = sala.codigo;
+          session.currentRoomCode = code;
+          break;
+        }
+      }
+    }
+    if (code.isEmpty) {
       throw const RoomException('No te encuentras en ninguna sala activa.');
     }
     return code;
   }
 
-  void _salirDeSalaActualSiExiste(_ClientSession session) {
-    final roomCode = session.currentRoomCode;
+  void _salirDeSalaActualSiExiste(
+    _ClientSession session, {
+    required bool porDesconexion,
+  }) {
+    var roomCode = session.currentRoomCode;
+    if (roomCode == null) {
+      for (final sala in _roomManager.salasActivas) {
+        if (sala.jugadores.any((j) => j.id == session.userId)) {
+          roomCode = sala.codigo;
+          break;
+        }
+      }
+    }
     if (roomCode == null) return;
 
     session.currentRoomCode = null;
+
+    // Si hay otra sesión activa del mismo usuario en la misma sala, no removerlo aún
+    final otraSesionActiva = _activeSessions.any(
+      (s) =>
+          !identical(s, session) &&
+          s.userId == session.userId &&
+          s.currentRoomCode == roomCode,
+    );
+    if (otraSesionActiva && porDesconexion) {
+      return;
+    }
+
+    final salaAntes = _roomManager.obtenerSala(roomCode);
+    final jugadorSaliente = salaAntes?.jugadores
+        .where((j) => j.id == session.userId)
+        .firstOrNull;
+    final eraGameMaster =
+        salaAntes != null && salaAntes.esGameMaster(session.userId);
+
     final salaRestante = _roomManager.removerJugador(
       codigo: roomCode,
       jugadorId: session.userId,
     );
 
     if (salaRestante != null) {
+      String? notificacion;
+      final nombreSaliente = jugadorSaliente?.nombre ?? session.username;
+      if (eraGameMaster) {
+        final nuevoHost = salaRestante.jugadores.first.nombre;
+        notificacion = ConstantesJuego.msgCambioGameMasterPorSalida(
+          nombreSaliente,
+          nuevoHost,
+          porDesconexion: porDesconexion,
+        );
+      } else {
+        notificacion = porDesconexion
+            ? ConstantesJuego.msgJugadorDesconectado(nombreSaliente)
+            : ConstantesJuego.msgJugadorSalio(nombreSaliente);
+      }
+
       _broadcastToRoom(
         salaRestante,
         ConstantesJuego.wsEventoSalaActualizada,
-        {'sala': salaRestante.toJson()},
+        {
+          'sala': salaRestante.toJson(),
+          'notificacion': notificacion,
+        },
       );
     }
   }
 
   void _handleDisconnect(_ClientSession session) {
-    _salirDeSalaActualSiExiste(session);
-    if (_sessionsByUserId[session.userId] == session) {
-      _sessionsByUserId.remove(session.userId);
-    }
+    _activeSessions.remove(session);
+    _salirDeSalaActualSiExiste(session, porDesconexion: true);
   }
 
   void _broadcastToRoom(
@@ -286,9 +340,11 @@ class LobbyWsHandler {
     String eventName,
     Map<String, dynamic> payload,
   ) {
-    for (final jugador in sala.jugadores) {
-      final targetSession = _sessionsByUserId[jugador.id];
-      if (targetSession != null) {
+    final memberIds = sala.jugadores.map((j) => j.id).toSet();
+    for (final targetSession in _activeSessions) {
+      if (targetSession.currentRoomCode == sala.codigo ||
+          memberIds.contains(targetSession.userId)) {
+        targetSession.currentRoomCode = sala.codigo;
         _sendToSession(targetSession, eventName, payload);
       }
     }

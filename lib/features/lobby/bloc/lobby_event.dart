@@ -82,6 +82,11 @@ class LobbyClearErrorRequested extends LobbyEvent {
   const LobbyClearErrorRequested();
 }
 
+/// Limpia los mensajes informativos activos en el estado del Lobby.
+class LobbyClearInfoRequested extends LobbyEvent {
+  const LobbyClearInfoRequested();
+}
+
 /// Evento interno disparado cuando el repositorio recibe una notificación del servidor.
 class LobbyServerEventReceived extends LobbyEvent {
   final LobbyServerEvent serverEvent;

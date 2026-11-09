@@ -17,10 +17,15 @@ sealed class LobbyServerEvent extends Equatable {
 /// Evento emitido cuando la sala se crea o actualiza su estado (jugadores, mapa, listos).
 class LobbyRoomSynced extends LobbyServerEvent {
   final SalaPartida sala;
-  const LobbyRoomSynced(this.sala);
+  final String? notificacion;
+
+  const LobbyRoomSynced(
+    this.sala, {
+    this.notificacion,
+  });
 
   @override
-  List<Object?> get props => [sala];
+  List<Object?> get props => [sala, notificacion];
 }
 
 /// Evento emitido cuando el jugador actual es expulsado por el Game Master.
@@ -39,6 +44,15 @@ class LobbyGameStarted extends LobbyServerEvent {
 
   @override
   List<Object?> get props => [sala];
+}
+
+/// Evento emitido cuando se pierde inesperadamente la conexión con el servidor.
+class LobbyConnectionLost extends LobbyServerEvent {
+  final String mensaje;
+  const LobbyConnectionLost(this.mensaje);
+
+  @override
+  List<Object?> get props => [mensaje];
 }
 
 /// Evento emitido cuando el servidor reporta un error de validación o conexión.
@@ -68,7 +82,7 @@ abstract class LobbyRepository {
   void joinRoom(String roomCode);
 
   /// Alterna el estado "Listo" del jugador actual en la sala.
-  void toggleReady({bool? ready});
+  void toggleReady({bool? ready, String? roomCode});
 
   /// Solicita cambiar el mapa seleccionado (1 al 4, exclusivo del Game Master).
   void selectMap(int mapId);
@@ -95,6 +109,8 @@ class WebSocketLobbyRepository implements LobbyRepository {
   StreamSubscription<dynamic>? _channelSubscription;
   Timer? _heartbeatTimer;
   Usuario? _currentUser;
+  String? _activeRoomCode;
+  bool _isIntentionalClose = false;
 
   final StreamController<LobbyServerEvent> _eventsController =
       StreamController<LobbyServerEvent>.broadcast();
@@ -121,6 +137,7 @@ class WebSocketLobbyRepository implements LobbyRepository {
 
     await disconnect();
     _currentUser = usuario;
+    _isIntentionalClose = false;
 
     final baseUri = Uri.parse(wsBaseUrl);
     final queryParams = <String, String>{
@@ -139,15 +156,28 @@ class WebSocketLobbyRepository implements LobbyRepository {
       _channelSubscription = _channel!.stream.listen(
         _onRawMessage,
         onError: (_) {
-          _eventsController.add(
-            const LobbyErrorOccurred(
-              'No se pudo conectar con el servidor Shelf. Verifica que esté en ejecución (dart run bin/server.dart).',
-            ),
-          );
+          final wasInRoom = _activeRoomCode != null;
           _cleanupSocket();
+          if (wasInRoom) {
+            _eventsController.add(
+              const LobbyConnectionLost(ConstantesJuego.errorConexionPerdida),
+            );
+          } else {
+            _eventsController.add(
+              const LobbyErrorOccurred(
+                'No se pudo conectar con el servidor Shelf. Verifica que esté en ejecución (dart run bin/server.dart).',
+              ),
+            );
+          }
         },
         onDone: () {
+          final shouldNotifyLoss = !_isIntentionalClose && _activeRoomCode != null;
           _cleanupSocket();
+          if (shouldNotifyLoss) {
+            _eventsController.add(
+              const LobbyConnectionLost(ConstantesJuego.errorConexionPerdida),
+            );
+          }
         },
       );
 
@@ -176,16 +206,22 @@ class WebSocketLobbyRepository implements LobbyRepository {
         case ConstantesJuego.wsEventoSalaActualizada:
           final salaJson = payload['sala'] as Map<String, dynamic>;
           final sala = SalaPartida.fromJson(salaJson);
-          _eventsController.add(LobbyRoomSynced(sala));
+          final notificacion = payload['notificacion'] as String?;
+          _activeRoomCode = sala.codigo;
+          _eventsController.add(
+            LobbyRoomSynced(sala, notificacion: notificacion),
+          );
           break;
 
         case ConstantesJuego.wsEventoPartidaIniciada:
           final salaJson = payload['sala'] as Map<String, dynamic>;
           final sala = SalaPartida.fromJson(salaJson);
+          _activeRoomCode = sala.codigo;
           _eventsController.add(LobbyGameStarted(sala));
           break;
 
         case ConstantesJuego.wsEventoJugadorExpulsado:
+          _activeRoomCode = null;
           final msg = payload['mensaje'] as String? ??
               ConstantesJuego.msgJugadorExpulsado;
           _eventsController.add(LobbyPlayerKicked(msg));
@@ -206,25 +242,37 @@ class WebSocketLobbyRepository implements LobbyRepository {
   }
 
   void _sendAction(String action, Map<String, dynamic> payload) {
+    final channel = _channel;
+    if (channel == null) {
+      if (action != ConstantesJuego.wsAccionPing &&
+          action != ConstantesJuego.wsAccionSalirSala) {
+        _eventsController.add(
+          const LobbyConnectionLost(ConstantesJuego.errorConexionPerdida),
+        );
+      }
+      return;
+    }
+
     final user = _currentUser;
     final enrichedPayload = <String, dynamic>{
       if (user != null) 'userId': user.id,
       if (user != null) 'username': user.username,
+      if (_activeRoomCode != null && !payload.containsKey('room_code'))
+        'room_code': _activeRoomCode,
       ...payload,
     };
 
     try {
-      _channel?.sink.add(
+      channel.sink.add(
         jsonEncode({
           'action': action,
           'payload': enrichedPayload,
         }),
       );
     } catch (_) {
+      _cleanupSocket();
       _eventsController.add(
-        const LobbyErrorOccurred(
-          'Conexión perdida con el servidor. Intenta nuevamente.',
-        ),
+        const LobbyConnectionLost(ConstantesJuego.errorConexionPerdida),
       );
     }
   }
@@ -236,15 +284,18 @@ class WebSocketLobbyRepository implements LobbyRepository {
 
   @override
   void joinRoom(String roomCode) {
+    final cleanCode = roomCode.trim();
+    _activeRoomCode = cleanCode;
     _sendAction(ConstantesJuego.wsAccionUnirseSala, {
-      'room_code': roomCode.trim(),
+      'room_code': cleanCode,
     });
   }
 
   @override
-  void toggleReady({bool? ready}) {
+  void toggleReady({bool? ready, String? roomCode}) {
     _sendAction(ConstantesJuego.wsAccionAlternarListo, {
       if (ready != null) 'ready': ready,
+      if (roomCode != null && roomCode.isNotEmpty) 'room_code': roomCode,
     });
   }
 
@@ -269,10 +320,12 @@ class WebSocketLobbyRepository implements LobbyRepository {
 
   @override
   void leaveRoom() {
+    _activeRoomCode = null;
     _sendAction(ConstantesJuego.wsAccionSalirSala, {});
   }
 
   void _cleanupSocket() {
+    _activeRoomCode = null;
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
     _channelSubscription?.cancel();
@@ -282,6 +335,8 @@ class WebSocketLobbyRepository implements LobbyRepository {
 
   @override
   Future<void> disconnect() async {
+    _isIntentionalClose = true;
+    _activeRoomCode = null;
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
     await _channelSubscription?.cancel();

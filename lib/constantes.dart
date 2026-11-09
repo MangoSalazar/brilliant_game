@@ -126,4 +126,21 @@ abstract final class ConstantesJuego {
   static const String msgPartidaTerminada = '¡Partida terminada! Un jugador ha alcanzado la victoria.';
   static const String msgTurnoPasado = 'Turno pasado.';
   static const String msgJugadorExpulsado = 'Has sido expulsado de la sala.';
+  static const String errorConexionPerdida =
+      'Se perdió la conexión con el servidor. Has vuelto al menú principal.';
+
+  static String msgJugadorDesconectado(String nombre) =>
+      '$nombre perdió la conexión y salió de la sala.';
+
+  static String msgJugadorSalio(String nombre) =>
+      '$nombre abandonó la sala.';
+
+  static String msgCambioGameMasterPorSalida(
+    String hostAnterior,
+    String nuevoHost, {
+    bool porDesconexion = false,
+  }) =>
+      porDesconexion
+          ? 'El Game Master $hostAnterior perdió la conexión. $nuevoHost es ahora el nuevo Game Master.'
+          : 'El Game Master $hostAnterior abandonó la sala. $nuevoHost es ahora el nuevo Game Master.';
 }

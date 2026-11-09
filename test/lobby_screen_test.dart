@@ -54,16 +54,17 @@ class _FakeLobbyRepository implements LobbyRepository {
   }
 
   @override
-  void toggleReady({bool? ready}) {
+  void toggleReady({bool? ready, String? roomCode}) {
     final updatedPlayers = currentSala.jugadores.map((j) {
       if (j.id == 'usr_1') {
         return j.copyWith(esListo: ready ?? !j.esListo);
       }
       return j;
     }).toList();
+    final allReady = updatedPlayers.every((j) => j.esListo);
     currentSala = currentSala.copyWith(
       jugadores: updatedPlayers,
-      estadoSala: EstadoSala.todosListos,
+      estadoSala: allReady ? EstadoSala.todosListos : EstadoSala.esperando,
     );
     controller.add(LobbyRoomSynced(currentSala));
   }
@@ -173,6 +174,117 @@ void main() {
 
         expect(find.byType(WipScreen), findsOneWidget);
         expect(find.textContaining('Sala #58129'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Permite alternar libremente entre "Marcarme como Listo" y "Cancelar Listo" sin desmarcar al cambiar mapa',
+      (tester) async {
+        final fakeRepo = _FakeLobbyRepository();
+
+        await tester.pumpWidget(
+          MultiBlocProvider(
+            providers: [
+              BlocProvider<AuthBloc>(
+                create: (_) => AuthBloc(
+                  authRepository:
+                      LocalAuthRepository(simulatedDelay: Duration.zero),
+                ),
+              ),
+              BlocProvider<LobbyBloc>(
+                create: (_) => LobbyBloc(lobbyRepository: fakeRepo)
+                  ..add(const LobbyCreateRoomRequested(usuario: hostUser)),
+              ),
+            ],
+            child: const MaterialApp(
+              home: LobbyScreen(usuarioActual: hostUser),
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        final toggleReadyFinder =
+            find.byKey(const Key('lobby_toggle_ready_button'));
+        expect(find.text('MARCARME COMO LISTO'), findsOneWidget);
+
+        // 1. Marcarse como Listo
+        await tester.ensureVisible(toggleReadyFinder);
+        await tester.pumpAndSettle();
+        await tester.tap(toggleReadyFinder);
+        await tester.pumpAndSettle();
+
+        expect(find.text('CANCELAR LISTO'), findsOneWidget);
+        final mango1ReadyText = tester.widget<Text>(
+          find.byKey(const Key('player_name_usr_1')),
+        );
+        expect(mango1ReadyText.style?.color, equals(const Color(0xFF10B981)));
+
+        // 2. Cambiar de mapa no desmarca el estado Listo
+        final map2Finder = find.byKey(const Key('lobby_map_option_2'));
+        await tester.ensureVisible(map2Finder);
+        await tester.pumpAndSettle();
+        await tester.tap(map2Finder);
+        await tester.pumpAndSettle();
+
+        expect(find.text('CANCELAR LISTO'), findsOneWidget);
+
+        // 3. Volver a pulsar el botón para Cancelar Listo
+        await tester.ensureVisible(toggleReadyFinder);
+        await tester.pumpAndSettle();
+        await tester.tap(toggleReadyFinder);
+        await tester.pumpAndSettle();
+
+        expect(find.text('MARCARME COMO LISTO'), findsOneWidget);
+        final mango1UnreadyText = tester.widget<Text>(
+          find.byKey(const Key('player_name_usr_1')),
+        );
+        expect(mango1UnreadyText.style?.color, equals(Colors.white));
+      },
+    );
+
+    testWidgets(
+      'Solicita confirmación antes de salir indicando transferencia de Game Master al jugador más antiguo',
+      (tester) async {
+        final fakeRepo = _FakeLobbyRepository();
+
+        await tester.pumpWidget(
+          MultiBlocProvider(
+            providers: [
+              BlocProvider<AuthBloc>(
+                create: (_) => AuthBloc(
+                  authRepository:
+                      LocalAuthRepository(simulatedDelay: Duration.zero),
+                ),
+              ),
+              BlocProvider<LobbyBloc>(
+                create: (_) => LobbyBloc(lobbyRepository: fakeRepo)
+                  ..add(const LobbyCreateRoomRequested(usuario: hostUser)),
+              ),
+            ],
+            child: const MaterialApp(
+              home: LobbyScreen(usuarioActual: hostUser),
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        // Pulsar botón de salir en el AppBar
+        await tester.tap(find.byKey(const Key('lobby_leave_button')));
+        await tester.pumpAndSettle();
+
+        // Se muestra el diálogo advirtiendo que Mango2 será el nuevo Game Master
+        expect(find.text('¿Abandonar la sala?'), findsOneWidget);
+        expect(
+          find.textContaining('transferirá automáticamente a Mango2'),
+          findsOneWidget,
+        );
+
+        // Si pulsa "Permanecer", sigue en la sala
+        await tester.tap(find.byKey(const Key('cancel_leave_room_button')));
+        await tester.pumpAndSettle();
+        expect(find.text('58129'), findsOneWidget);
       },
     );
   });

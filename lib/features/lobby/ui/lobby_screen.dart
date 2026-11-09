@@ -68,6 +68,49 @@ class LobbyScreen extends StatelessWidget {
           );
           context.read<LobbyBloc>().add(const LobbyClearErrorRequested());
         }
+
+        if (state.infoMessage != null && state.infoMessage!.isNotEmpty) {
+          final isHostChange = state.infoMessage!.contains('Game Master');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: const Color(0xFF1E293B),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: isHostChange
+                      ? const Color(0xFFF59E0B)
+                      : const Color(0xFF38BDF8),
+                  width: 1.2,
+                ),
+              ),
+              content: Row(
+                children: [
+                  FaIcon(
+                    isHostChange
+                        ? FontAwesomeIcons.crown
+                        : FontAwesomeIcons.circleInfo,
+                    color: isHostChange
+                        ? const Color(0xFFFBBF24)
+                        : const Color(0xFF38BDF8),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      state.infoMessage!,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+          context.read<LobbyBloc>().add(const LobbyClearInfoRequested());
+        }
       },
       builder: (context, state) {
         if (state.isInGame && state.sala != null) {
@@ -130,23 +173,30 @@ class LobbyScreen extends StatelessWidget {
           ),
         );
 
-        return Scaffold(
-          backgroundColor: const Color(0xFF0C0E1A),
-          appBar: AppBar(
-            backgroundColor: const Color(0xFF141728),
-            elevation: 0,
-            leading: IconButton(
-              key: const Key('lobby_leave_button'),
-              tooltip: 'Salir de la Sala',
-              onPressed: () {
-                context.read<LobbyBloc>().add(const LobbyLeaveRoomRequested());
-              },
-              icon: const FaIcon(
-                FontAwesomeIcons.arrowLeft,
-                color: Colors.white,
-                size: 16,
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) {
+              _confirmLeaveRoom(context, sala, esHost);
+            }
+          },
+          child: Scaffold(
+            backgroundColor: const Color(0xFF0C0E1A),
+            appBar: AppBar(
+              backgroundColor: const Color(0xFF141728),
+              elevation: 0,
+              leading: IconButton(
+                key: const Key('lobby_leave_button'),
+                tooltip: 'Salir de la Sala',
+                onPressed: () {
+                  _confirmLeaveRoom(context, sala, esHost);
+                },
+                icon: const FaIcon(
+                  FontAwesomeIcons.arrowLeft,
+                  color: Colors.white,
+                  size: 16,
+                ),
               ),
-            ),
             title: Row(
               children: [
                 Container(
@@ -242,9 +292,111 @@ class LobbyScreen extends StatelessWidget {
               ),
             ),
           ),
-        );
+        ),
+      );
       },
     );
+  }
+
+  Future<void> _confirmLeaveRoom(
+    BuildContext context,
+    SalaPartida sala,
+    bool esHost,
+  ) async {
+    final otrosJugadores =
+        sala.jugadores.where((j) => j.id != usuarioActual.id).toList();
+    final siguienteHost =
+        otrosJugadores.isNotEmpty ? otrosJugadores.first.nombre : null;
+
+    final String mensajeConfirmacion;
+    if (esHost && siguienteHost != null) {
+      mensajeConfirmacion =
+          'Eres el Game Master actual. Si abandonas la sala, el rol de Game Master se transferirá automáticamente a $siguienteHost.';
+    } else if (esHost) {
+      mensajeConfirmacion =
+          'Eres el único jugador en la sala. Si sales ahora, la sala #${sala.codigo} se cerrará.';
+    } else {
+      mensajeConfirmacion =
+          '¿Estás seguro de que deseas abandonar la sala #${sala.codigo} y volver al menú principal?';
+    }
+
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: const Color(0xFF141728),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: const BorderSide(color: Color(0xFF2B3356), width: 1.5),
+        ),
+        title: Row(
+          children: [
+            FaIcon(
+              esHost
+                  ? FontAwesomeIcons.crown
+                  : FontAwesomeIcons.rightFromBracket,
+              color:
+                  esHost ? const Color(0xFFF59E0B) : const Color(0xFFF43F5E),
+              size: 18,
+            ),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                '¿Abandonar la sala?',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          mensajeConfirmacion,
+          style: const TextStyle(
+            color: Color(0xFFCBD5E1),
+            fontSize: 14,
+            height: 1.45,
+          ),
+        ),
+        actions: [
+          TextButton(
+            key: const Key('cancel_leave_room_button'),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text(
+              'Permanecer',
+              style: TextStyle(
+                color: Color(0xFF94A3B8),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ElevatedButton.icon(
+            key: const Key('confirm_leave_room_button'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE11D48),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            icon: const FaIcon(
+              FontAwesomeIcons.arrowRightFromBracket,
+              size: 13,
+            ),
+            label: const Text(
+              'Salir de la sala',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar == true && context.mounted) {
+      context.read<LobbyBloc>().add(const LobbyLeaveRoomRequested());
+    }
   }
 
   Widget _buildRoomCodeBanner(
@@ -712,39 +864,52 @@ class LobbyScreen extends StatelessWidget {
             ),
           ),
 
-          // Badge de estado LISTO / ESPERANDO
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: jugador.esListo
-                  ? readyGreen.withValues(alpha: 0.18)
-                  : const Color(0xFF1E293B),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: jugador.esListo ? readyGreen : const Color(0xFF334155),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FaIcon(
-                  jugador.esListo
-                      ? FontAwesomeIcons.circleCheck
-                      : FontAwesomeIcons.clock,
-                  color: jugador.esListo ? readyGreen : const Color(0xFF94A3B8),
-                  size: 12,
+          // Badge de estado LISTO / ESPERANDO (interactivo para el usuario actual)
+          InkWell(
+            key: Key('player_ready_badge_${jugador.id}'),
+            borderRadius: BorderRadius.circular(20),
+            onTap: esUsuarioActual
+                ? () {
+                    context.read<LobbyBloc>().add(
+                          LobbyToggleReadyRequested(ready: !jugador.esListo),
+                        );
+                  }
+                : null,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: jugador.esListo
+                    ? readyGreen.withValues(alpha: 0.18)
+                    : const Color(0xFF1E293B),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: jugador.esListo ? readyGreen : const Color(0xFF334155),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  jugador.esListo ? 'LISTO' : 'PENDIENTE',
-                  style: TextStyle(
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FaIcon(
+                    jugador.esListo
+                        ? FontAwesomeIcons.circleCheck
+                        : FontAwesomeIcons.clock,
                     color:
                         jugador.esListo ? readyGreen : const Color(0xFF94A3B8),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
+                    size: 12,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 6),
+                  Text(
+                    jugador.esListo ? 'LISTO' : 'PENDIENTE',
+                    style: TextStyle(
+                      color: jugador.esListo
+                          ? readyGreen
+                          : const Color(0xFF94A3B8),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -830,25 +995,27 @@ class LobbyScreen extends StatelessWidget {
       children: [
         Row(
           children: [
-            // Botón para marcarse como Listo / No Listo
+            // Botón para marcarse como Listo / Cancelar Listo
             Expanded(
               child: SizedBox(
                 height: 52,
                 child: ElevatedButton.icon(
                   key: const Key('lobby_toggle_ready_button'),
                   onPressed: () {
-                    context
-                        .read<LobbyBloc>()
-                        .add(const LobbyToggleReadyRequested());
+                    context.read<LobbyBloc>().add(
+                          LobbyToggleReadyRequested(ready: !estoyListo),
+                        );
                   },
                   icon: FaIcon(
                     estoyListo
-                        ? FontAwesomeIcons.circleCheck
+                        ? FontAwesomeIcons.rotateLeft
                         : FontAwesomeIcons.hand,
                     size: 16,
                   ),
                   label: Text(
-                    estoyListo ? '¡ESTOY LISTO! (CAMBIAR)' : 'MARCARME COMO LISTO',
+                    estoyListo
+                        ? 'CANCELAR LISTO'
+                        : 'MARCARME COMO LISTO',
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: 14,
@@ -857,9 +1024,15 @@ class LobbyScreen extends StatelessWidget {
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: estoyListo
-                        ? const Color(0xFF10B981)
+                        ? const Color(0xFF059669)
                         : const Color(0xFF2563EB),
                     foregroundColor: Colors.white,
+                    side: estoyListo
+                        ? const BorderSide(
+                            color: Color(0xFF34D399),
+                            width: 1.5,
+                          )
+                        : null,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
