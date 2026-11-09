@@ -118,6 +118,37 @@ void main() {
       expect(salaEnJuego.estadoSala, equals(EstadoSala.enJuego));
     });
 
+    test('Rechaza la entrada de cualquier jugador cuando la partida ya se ha iniciado', () {
+      final sala = roomManager.crearSala(
+        jugadorId: 'usr_1',
+        nombreJugador: 'Mango',
+      );
+      roomManager.cambiarEstadoListo(
+        codigo: sala.codigo,
+        jugadorId: 'usr_1',
+        listo: true,
+      );
+      roomManager.iniciarPartida(
+        codigo: sala.codigo,
+        solicitanteId: 'usr_1',
+      );
+
+      expect(
+        () => roomManager.unirseASala(
+          codigo: sala.codigo,
+          jugadorId: 'usr_nuevo',
+          nombreJugador: 'JugadorTardio',
+        ),
+        throwsA(
+          predicate(
+            (e) =>
+                e is RoomException &&
+                e.message == ConstantesJuego.errorPartidaYaIniciada,
+          ),
+        ),
+      );
+    });
+
     test('Transfiere el rol de Game Master si el host sale de la sala', () {
       final sala = roomManager.crearSala(
         jugadorId: 'usr_1',

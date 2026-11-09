@@ -79,7 +79,11 @@ class RoomManager {
       throw const RoomException(ConstantesJuego.errorSalaNoExiste);
     }
 
-    // Si el jugador ya se encuentra dentro de la sala (reconexión), devolver la sala
+    if (sala.partidaIniciada) {
+      throw const RoomException(ConstantesJuego.errorPartidaYaIniciada);
+    }
+
+    // Si el jugador ya se encuentra dentro de la sala, devolver la sala
     final indiceExistente =
         sala.jugadores.indexWhere((j) => j.id == jugadorId);
     if (indiceExistente != -1) {

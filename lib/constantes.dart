@@ -114,6 +114,7 @@ abstract final class ConstantesJuego {
   static const String errorCoordenadasFuera = 'Coordenadas fuera del tablero';
   static const String errorSalaLlena = 'La sala ya alcanzó su capacidad máxima de 6 jugadores.';
   static const String errorSalaNoExiste = 'No se encontró ninguna sala con ese código.';
+  static const String errorPartidaYaIniciada = 'No puedes unirte porque la partida ya ha comenzado.';
   static const String errorCodigoInvalido = 'El código de sala debe tener exactamente 5 dígitos.';
   static const String errorJugadoresNoListos = 'No todos los jugadores están listos para iniciar la partida.';
   static const String errorSoloHostInicia = 'Solo el Game Master puede iniciar la partida.';

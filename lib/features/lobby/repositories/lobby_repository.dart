@@ -285,7 +285,6 @@ class WebSocketLobbyRepository implements LobbyRepository {
   @override
   void joinRoom(String roomCode) {
     final cleanCode = roomCode.trim();
-    _activeRoomCode = cleanCode;
     _sendAction(ConstantesJuego.wsAccionUnirseSala, {
       'room_code': cleanCode,
     });

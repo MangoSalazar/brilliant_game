@@ -44,6 +44,12 @@ class SalaPartida extends Equatable {
   bool get estaLlena =>
       jugadores.length >= ConstantesJuego.maxJugadoresPorSala;
 
+  /// Indica si la partida ya fue iniciada y no admite el ingreso de jugadores.
+  bool get partidaIniciada =>
+      estadoSala == EstadoSala.enSetup ||
+      estadoSala == EstadoSala.enJuego ||
+      estadoSala == EstadoSala.finalizada;
+
   /// Verifica si el identificador corresponde al Game Master actual de la sala.
   bool esGameMaster(String jugadorId) => gameMasterId == jugadorId;
 
