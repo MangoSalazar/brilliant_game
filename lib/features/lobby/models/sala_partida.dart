@@ -27,6 +27,10 @@ class SalaPartida extends Equatable {
   final int mapaSeleccionado;
   final List<JugadorSala> jugadores;
   final EstadoSala estadoSala;
+  final int rondaActual;
+  final List<int> dadosActuales;
+  final Map<String, int> indicesEnDisputaPorColor;
+  final String? ganadorId;
 
   const SalaPartida({
     required this.codigo,
@@ -34,6 +38,10 @@ class SalaPartida extends Equatable {
     this.mapaSeleccionado = 1,
     this.jugadores = const [],
     this.estadoSala = EstadoSala.esperando,
+    this.rondaActual = 0,
+    this.dadosActuales = const [],
+    this.indicesEnDisputaPorColor = const {},
+    this.ganadorId,
   });
 
   /// Indica si todos los jugadores presentes en la sala han marcado su estado como "Listo".
@@ -50,6 +58,15 @@ class SalaPartida extends Equatable {
       estadoSala == EstadoSala.enJuego ||
       estadoSala == EstadoSala.finalizada;
 
+  /// Indica si la partida se encuentra en la fase inicial de preparación (Setup).
+  bool get enFaseSetup =>
+      estadoSala == EstadoSala.enSetup ||
+      (estadoSala == EstadoSala.enJuego && rondaActual == 0);
+
+  /// Indica si la partida se encuentra en fase activa de rondas con dados.
+  bool get enFaseRondas =>
+      estadoSala == EstadoSala.enJuego && rondaActual >= 1;
+
   /// Verifica si el identificador corresponde al Game Master actual de la sala.
   bool esGameMaster(String jugadorId) => gameMasterId == jugadorId;
 
@@ -59,6 +76,11 @@ class SalaPartida extends Equatable {
     int? mapaSeleccionado,
     List<JugadorSala>? jugadores,
     EstadoSala? estadoSala,
+    int? rondaActual,
+    List<int>? dadosActuales,
+    Map<String, int>? indicesEnDisputaPorColor,
+    String? ganadorId,
+    bool clearGanador = false,
   }) {
     return SalaPartida(
       codigo: codigo ?? this.codigo,
@@ -66,6 +88,11 @@ class SalaPartida extends Equatable {
       mapaSeleccionado: mapaSeleccionado ?? this.mapaSeleccionado,
       jugadores: jugadores ?? this.jugadores,
       estadoSala: estadoSala ?? this.estadoSala,
+      rondaActual: rondaActual ?? this.rondaActual,
+      dadosActuales: dadosActuales ?? this.dadosActuales,
+      indicesEnDisputaPorColor:
+          indicesEnDisputaPorColor ?? this.indicesEnDisputaPorColor,
+      ganadorId: clearGanador ? null : (ganadorId ?? this.ganadorId),
     );
   }
 
@@ -75,12 +102,27 @@ class SalaPartida extends Equatable {
         'mapaSeleccionado': mapaSeleccionado,
         'jugadores': jugadores.map((j) => j.toJson()).toList(),
         'estadoSala': estadoSala.toJson(),
+        'rondaActual': rondaActual,
+        'dadosActuales': dadosActuales,
+        'indicesEnDisputaPorColor': indicesEnDisputaPorColor,
+        'ganadorId': ganadorId,
       };
 
   factory SalaPartida.fromJson(Map<String, dynamic> json) {
     final listaJugadores = (json['jugadores'] as List<dynamic>? ?? [])
         .map((item) => JugadorSala.fromJson(item as Map<String, dynamic>))
         .toList();
+
+    final listaDados = (json['dadosActuales'] as List<dynamic>? ?? [])
+        .map((item) => (item as num).toInt())
+        .toList();
+
+    final rawDisputa =
+        json['indicesEnDisputaPorColor'] as Map<String, dynamic>? ?? const {};
+    final mapaDisputa = <String, int>{
+      for (final entry in rawDisputa.entries)
+        entry.key: (entry.value as num).toInt(),
+    };
 
     return SalaPartida(
       codigo: json['codigo'] as String,
@@ -90,6 +132,10 @@ class SalaPartida extends Equatable {
       estadoSala: json['estadoSala'] != null
           ? EstadoSala.fromJson(json['estadoSala'] as String)
           : EstadoSala.esperando,
+      rondaActual: json['rondaActual'] as int? ?? 0,
+      dadosActuales: listaDados,
+      indicesEnDisputaPorColor: mapaDisputa,
+      ganadorId: json['ganadorId'] as String?,
     );
   }
 
@@ -100,5 +146,9 @@ class SalaPartida extends Equatable {
         mapaSeleccionado,
         jugadores,
         estadoSala,
+        rondaActual,
+        dadosActuales,
+        indicesEnDisputaPorColor,
+        ganadorId,
       ];
 }

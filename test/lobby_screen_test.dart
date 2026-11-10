@@ -91,6 +91,18 @@ class _FakeLobbyRepository implements LobbyRepository {
   }
 
   @override
+  void completeSetup() {}
+
+  @override
+  void completeTurn({
+    List<String> coloresCompletados = const [],
+    bool tableroLleno = false,
+  }) {}
+
+  @override
+  void passTurn({bool tableroLleno = false}) {}
+
+  @override
   void leaveRoom() {}
 
   @override
@@ -330,6 +342,73 @@ void main() {
         await tester.pump();
 
         expect(lobbyBloc.state.status.name, equals('initial'));
+      },
+    );
+
+    testWidgets(
+      'GameScreen en Ronda 1 muestra los 2 dados globales, ilumina el 2.º puesto en disputa cuando el 1.º ya fue ganado y permite jugar con Dado Ancla',
+      (tester) async {
+        tester.view.physicalSize = const Size(1440, 960);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        const salaRonda1 = SalaPartida(
+          codigo: '58129',
+          gameMasterId: 'usr_1',
+          mapaSeleccionado: 1,
+          estadoSala: EstadoSala.enJuego,
+          rondaActual: 1,
+          dadosActuales: [1, 4],
+          indicesEnDisputaPorColor: {'rojo': 1}, // 2.º puesto (6 pts) en disputa
+          jugadores: [
+            JugadorSala(
+              id: 'usr_1',
+              nombre: 'Mango1',
+              esHost: true,
+              esListo: true,
+              setupListo: true,
+              puntos: 8,
+            ),
+            JugadorSala(
+              id: 'usr_2',
+              nombre: 'Mango2',
+              esHost: false,
+              esListo: true,
+              setupListo: true,
+              puntos: 0,
+            ),
+          ],
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: GameScreen(
+              usuario: hostUser,
+              sala: salaRonda1,
+              onLeaveGame: () {},
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        // Verifica que el marcador muestra los 8 pts del jugador 1
+        expect(find.text('8 pts'), findsOneWidget);
+
+        // Verifica que se muestran las tarjetas de los 2 dados de la Ronda 1
+        expect(find.byKey(const Key('die_card_0')), findsOneWidget);
+        expect(find.byKey(const Key('die_card_1')), findsOneWidget);
+        expect(find.byKey(const Key('gameplay_action_panel')), findsOneWidget);
+
+        // Verifica que para la zona roja el 2.º puesto (badge_rojo_2) está encendido con el color rojo
+        final badgeRojo2 = tester.widget<Container>(
+          find.byKey(const Key('score_badge_rojo_2')),
+        );
+        final decRojo2 = badgeRojo2.decoration as BoxDecoration;
+        expect(decRojo2.color, equals(const Color(0xFFEF4444)));
       },
     );
   });

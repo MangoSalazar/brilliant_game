@@ -25,6 +25,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     on<LobbySelectMapRequested>(_onSelectMapRequested);
     on<LobbyKickPlayerRequested>(_onKickPlayerRequested);
     on<LobbyStartGameRequested>(_onStartGameRequested);
+    on<LobbyCompleteSetupRequested>(_onCompleteSetupRequested);
+    on<LobbyCompleteTurnRequested>(_onCompleteTurnRequested);
+    on<LobbyPassTurnRequested>(_onPassTurnRequested);
     on<LobbyLeaveRoomRequested>(_onLeaveRoomRequested);
     on<LobbyClearErrorRequested>(_onClearErrorRequested);
     on<LobbyClearInfoRequested>(_onClearInfoRequested);
@@ -140,6 +143,30 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     Emitter<LobbyState> emit,
   ) {
     _lobbyRepository.startGame();
+  }
+
+  void _onCompleteSetupRequested(
+    LobbyCompleteSetupRequested event,
+    Emitter<LobbyState> emit,
+  ) {
+    _lobbyRepository.completeSetup();
+  }
+
+  void _onCompleteTurnRequested(
+    LobbyCompleteTurnRequested event,
+    Emitter<LobbyState> emit,
+  ) {
+    _lobbyRepository.completeTurn(
+      coloresCompletados: event.coloresCompletados,
+      tableroLleno: event.tableroLleno,
+    );
+  }
+
+  void _onPassTurnRequested(
+    LobbyPassTurnRequested event,
+    Emitter<LobbyState> emit,
+  ) {
+    _lobbyRepository.passTurn(tableroLleno: event.tableroLleno);
   }
 
   void _onLeaveRoomRequested(

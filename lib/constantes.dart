@@ -48,6 +48,10 @@ abstract final class ConstantesJuego {
   static const String wsAccionAlternarListo = 'toggle_ready';
   static const String wsAccionExpulsarJugador = 'kick_player';
   static const String wsAccionIniciarPartida = 'start_game';
+  static const String wsAccionCompletarSetup = 'setup_completed';
+  static const String wsAccionCompletarRegion = 'region_completed';
+  static const String wsAccionCompletarTurno = 'turn_completed';
+  static const String wsAccionPasarTurno = 'pass_turn';
   static const String wsAccionSalirSala = 'leave_room';
   static const String wsAccionPing = 'ping';
 
@@ -55,6 +59,9 @@ abstract final class ConstantesJuego {
   static const String wsEventoSalaActualizada = 'room_updated';
   static const String wsEventoJugadorExpulsado = 'player_kicked';
   static const String wsEventoPartidaIniciada = 'game_started';
+  static const String wsEventoDadosLanzados = 'dice_rolled';
+  static const String wsEventoPuntuacionesActualizadas = 'scores_updated';
+  static const String wsEventoPartidaFinalizada = 'game_over';
   static const String wsEventoError = 'error';
   static const String wsEventoPong = 'pong';
 
@@ -87,6 +94,23 @@ abstract final class ConstantesJuego {
     2: 3,
     3: 2,
   };
+
+  /// Devuelve el mapa de puntuaciones (1.º, 2.º y 3.er lugar) para un identificador de color.
+  static Map<int, int> tablaPuntuacionesPorColorId(String colorId) {
+    final normalizado = colorId.trim().toLowerCase();
+    if (normalizado == 'verde') {
+      return puntuacionesVerde;
+    }
+    if (normalizado.startsWith('naranja')) {
+      return puntuacionesNaranja;
+    }
+    return puntuacionesEstandar;
+  }
+
+  /// Devuelve los puntos otorgados para un [colorId] en el [lugar] indicado (1, 2 o 3).
+  static int puntosPorColorYLugar(String colorId, int lugar) {
+    return tablaPuntuacionesPorColorId(colorId)[lugar] ?? 0;
+  }
 
   // ==========================================
   // Textos Descriptivos de las Regiones

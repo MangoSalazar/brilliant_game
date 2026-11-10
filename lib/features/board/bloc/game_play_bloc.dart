@@ -64,18 +64,27 @@ class GamePlayActive extends GamePlayState {
 
   Tablero get tableroActual => tableros[jugadorActual];
   int? get ancla => anclaIndex == null ? null : dados[anclaIndex!];
+  int? get valorAColocar =>
+      anclaIndex == null ? null : dados[1 - anclaIndex!];
 
-  /// Casillas vacías de una región del jugador actual donde se puede colocar el ancla.
+  /// Casillas vacías de una región del jugador actual adyacentes a una casilla
+  /// con el valor del [ancla] donde se puede colocar [valorAColocar].
   List<Casilla> get casillasValidas {
-    final valor = ancla;
-    if (valor == null || terminada) return const [];
-    return _calcularValidas(tableroActual, valor);
+    final vAncla = ancla;
+    final vColocar = valorAColocar;
+    if (vAncla == null || vColocar == null || terminada) return const [];
+    return calcularCasillasValidas(
+      tablero: tableroActual,
+      valorAncla: vAncla,
+      valorAColocar: vColocar,
+    );
   }
 
   /// Regiones que quedarían llenas con una jugada válida, con su puntuación.
   List<RegionPorLlenar> get regionesPorLlenar {
-    final valor = ancla;
-    if (valor == null || terminada) return const [];
+    final vAncla = ancla;
+    final vColocar = valorAColocar;
+    if (vAncla == null || vColocar == null || terminada) return const [];
     final tablero = tableroActual;
     final validas = casillasValidas.toSet();
     final resultado = <RegionPorLlenar>[];
@@ -132,25 +141,32 @@ class GamePlayActive extends GamePlayState {
       ];
 }
 
-/// Casillas vacías, pertenecientes a una región, adyacentes a una casilla ocupada
-/// y cuya región admite [valor].
-List<Casilla> _calcularValidas(Tablero tablero, int valor) {
+/// Casillas vacías, pertenecientes a una región, adyacentes ortogonalmente
+/// a una casilla que contenga [valorAncla] y cuya región admita [valorAColocar].
+List<Casilla> calcularCasillasValidas({
+  required Tablero tablero,
+  required int valorAncla,
+  required int valorAColocar,
+}) {
   final validas = <Casilla>[];
   for (final g in tablero.regiones) {
-    if (!g.puedeAgregar(valor)) continue;
+    if (!g.puedeAgregar(valorAColocar)) continue;
     for (final c in g.casillas) {
-      if (c.valor == null && _tieneVecinaOcupada(tablero, c)) validas.add(c);
+      if (c.valor == null && tieneVecinaConValor(tablero, c, valorAncla)) {
+        validas.add(c);
+      }
     }
   }
   return validas;
 }
 
-bool _tieneVecinaOcupada(Tablero tablero, Casilla c) {
+/// Verifica si la casilla [c] tiene al menos una casilla vecina ortogonal con [valorAncla].
+bool tieneVecinaConValor(Tablero tablero, Casilla c, int valorAncla) {
   for (final (dx, dy) in const [(1, 0), (-1, 0), (0, 1), (0, -1)]) {
     final x = c.x + dx;
     final y = c.y + dy;
     if (x < 0 || x >= tablero.ancho || y < 0 || y >= tablero.alto) continue;
-    if (tablero.celdas[y][x].valor != null) return true;
+    if (tablero.celdas[y][x].valor == valorAncla) return true;
   }
   return false;
 }
@@ -259,8 +275,9 @@ class GamePlayBloc extends Bloc<GamePlayEvent, GamePlayState> {
     final s = state;
     if (s is! GamePlayActive || s.terminada) return;
 
-    final valor = s.ancla;
-    if (valor == null) {
+    final vAncla = s.ancla;
+    final vColocar = s.valorAColocar;
+    if (vAncla == null || vColocar == null) {
       emit(s.copyWith(errorMessage: () => ConstantesJuego.errorEligeAncla));
       return;
     }
@@ -272,14 +289,14 @@ class GamePlayBloc extends Bloc<GamePlayEvent, GamePlayState> {
     final casilla = tablero.getCasilla(event.x, event.y);
     if (!s.casillasValidas.contains(casilla)) {
       emit(s.copyWith(
-        errorMessage: () => ConstantesJuego.errorCasillaInvalida(valor),
+        errorMessage: () => ConstantesJuego.errorCasillaInvalida(vColocar),
       ));
       return;
     }
 
     final indice = tablero.regiones.indexWhere((g) => g.casillas.contains(casilla));
     final grupo = tablero.regiones[indice];
-    grupo.agregarValor(casilla, valor);
+    grupo.agregarValor(casilla, vColocar);
 
     var puntos = s.puntos;
     var orden = s.ordenCompletado;

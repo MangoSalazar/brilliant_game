@@ -48,21 +48,28 @@ void main() {
     await b.close();
   });
 
-  test('casillas válidas respetan región (morado exige idénticos) y adyacencia', () async {
+  test('casillas válidas exigen adyacencia al valor del dado Ancla y colocan el OTRO dado', () async {
     final b = _bloc();
     await Future<void>.delayed(Duration.zero);
     final inicial = b.state as GamePlayActive;
-    // Fuerza el ancla a un valor conocido eligiendo el dado cuyo valor sea 4 o no.
+    // Asegurar que la casilla (0,0) tenga el valor del dado 0 (ancla) y (3,3) otro valor
+    final d0 = inicial.dados[0];
+    final d1 = inicial.dados[1];
+    inicial.tableroActual.getCasilla(0, 0).valor = d0;
+    inicial.tableroActual.getCasilla(3, 3).valor = d0;
+
     b.add(const SelectAnchor(0));
     await Future<void>.delayed(Duration.zero);
     final s = b.state as GamePlayActive;
-    final valor = s.ancla!;
+    expect(s.ancla, equals(d0));
+    expect(s.valorAColocar, equals(d1));
+
     final coords = s.casillasValidas.map((c) => (c.x, c.y)).toSet();
-    // Morado: solo si el ancla es 4; (1,0) es adyacente a (0,0).
-    expect(coords.contains((1, 0)), valor == 4);
-    // Verde acepta cualquier número; (4,3) adyacente a (3,3).
+    // Morado en (0,0)-(1,0): (0,0) tiene d0; solo admite colocar d1 en (1,0) si d1 == d0.
+    expect(coords.contains((1, 0)), d1 == d0);
+    // Verde en (3,3)-(4,3)-(5,3): (3,3) tiene d0 (ancla), por lo que (4,3) es adyacente al ancla y acepta cualquier d1.
     expect(coords.contains((4, 3)), isTrue);
-    // (5,3) no es adyacente a ninguna ocupada.
+    // (5,3) no es adyacente a ninguna casilla con el valor del ancla.
     expect(coords.contains((5, 3)), isFalse);
     expect(inicial.jugadorActual, 0);
     await b.close();
@@ -77,14 +84,19 @@ void main() {
     b.add(StartGame(base, jugadores: 2));
     await Future<void>.delayed(Duration.zero);
 
-    // Cada turno: ancla = dado 0 y colocar en (1,0) (verde acepta todo).
-    b.add(const SelectAnchor(0));
-    b.add(const PlaceNumber(1, 0)); // jugador 0 completa primero
-    await Future<void>.delayed(Duration.zero);
+    // Ajustar la casilla (0,0) del jugador 0 al valor de dados[0] para que dados[0] sea ancla válido
     var s = b.state as GamePlayActive;
+    s.tableroActual.getCasilla(0, 0).valor = s.dados[0];
+
+    b.add(const SelectAnchor(0));
+    b.add(const PlaceNumber(1, 0)); // jugador 0 completa primero colocando dados[1]
+    await Future<void>.delayed(Duration.zero);
+    s = b.state as GamePlayActive;
     expect(s.puntos[0], 4); // verde: 1.er lugar = 4
     expect(s.jugadorActual, 1);
 
+    // Ajustar la casilla (0,0) del jugador 1 al valor de dados[0] del nuevo turno
+    s.tableroActual.getCasilla(0, 0).valor = s.dados[0];
     b.add(const SelectAnchor(0));
     b.add(const PlaceNumber(1, 0)); // jugador 1 completa segundo
     await Future<void>.delayed(Duration.zero);
@@ -101,6 +113,10 @@ void main() {
 
     final b = GamePlayBloc();
     b.add(StartGame(base, jugadores: 2));
+    await Future<void>.delayed(Duration.zero);
+    final inicial = b.state as GamePlayActive;
+    inicial.tableroActual.getCasilla(0, 0).valor = inicial.dados[1];
+
     b.add(const SelectAnchor(1));
     await Future<void>.delayed(Duration.zero);
     final s = b.state as GamePlayActive;

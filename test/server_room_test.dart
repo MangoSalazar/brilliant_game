@@ -213,6 +213,106 @@ void main() {
       );
       expect(salaEnCurso.gameMasterId, equals('usr_2'));
     });
+
+    test('Sincroniza fin de Setup, tira dados por ronda, adjudica puntos con empates y declara ganador a los 21+ puntos', () {
+      final sala = roomManager.crearSala(
+        jugadorId: 'usr_1',
+        nombreJugador: 'Mango1',
+      );
+      roomManager.unirseASala(
+        codigo: sala.codigo,
+        jugadorId: 'usr_2',
+        nombreJugador: 'Mango2',
+      );
+      roomManager.cambiarEstadoListo(
+        codigo: sala.codigo,
+        jugadorId: 'usr_1',
+        listo: true,
+      );
+      roomManager.cambiarEstadoListo(
+        codigo: sala.codigo,
+        jugadorId: 'usr_2',
+        listo: true,
+      );
+      final salaSetup = roomManager.iniciarPartida(
+        codigo: sala.codigo,
+        solicitanteId: 'usr_1',
+      );
+      expect(salaSetup.rondaActual, equals(0));
+      expect(salaSetup.enFaseSetup, isTrue);
+
+      // Jugador 1 confirma setup -> aún falta Jugador 2
+      final trasSetup1 = roomManager.confirmarSetupJugador(
+        codigo: sala.codigo,
+        jugadorId: 'usr_1',
+      );
+      expect(trasSetup1.rondaActual, equals(0));
+
+      // Jugador 2 confirma setup -> inicia Ronda 1 automáticamente con 2 dados
+      final salaRonda1 = roomManager.confirmarSetupJugador(
+        codigo: sala.codigo,
+        jugadorId: 'usr_2',
+      );
+      expect(salaRonda1.rondaActual, equals(1));
+      expect(salaRonda1.enFaseRondas, isTrue);
+      expect(salaRonda1.dadosActuales.length, equals(2));
+
+      // Ronda 1: Jugador 1 completa 'rojo' (1.º lugar = 8 pts), Jugador 2 pasa
+      roomManager.completarTurnoJugador(
+        codigo: sala.codigo,
+        jugadorId: 'usr_1',
+        coloresCompletados: ['rojo'],
+      );
+      final salaRonda2 = roomManager.completarTurnoJugador(
+        codigo: sala.codigo,
+        jugadorId: 'usr_2',
+      );
+      expect(salaRonda2.rondaActual, equals(2));
+      expect(
+        salaRonda2.jugadores.firstWhere((j) => j.id == 'usr_1').puntos,
+        equals(8),
+      );
+      expect(salaRonda2.indicesEnDisputaPorColor['rojo'], equals(1));
+
+      // Ronda 2: Ambos completan 'azul' en la misma ronda (empate de 1.º lugar -> ambos reciben 8 pts)
+      roomManager.completarTurnoJugador(
+        codigo: sala.codigo,
+        jugadorId: 'usr_1',
+        coloresCompletados: ['azul'],
+      );
+      final salaRonda3 = roomManager.completarTurnoJugador(
+        codigo: sala.codigo,
+        jugadorId: 'usr_2',
+        coloresCompletados: ['azul'],
+      );
+      expect(salaRonda3.rondaActual, equals(3));
+      expect(
+        salaRonda3.jugadores.firstWhere((j) => j.id == 'usr_1').puntos,
+        equals(16),
+      );
+      expect(
+        salaRonda3.jugadores.firstWhere((j) => j.id == 'usr_2').puntos,
+        equals(8),
+      );
+      expect(salaRonda3.indicesEnDisputaPorColor['azul'], equals(1));
+
+      // Ronda 3: Jugador 1 completa 'morado' (1.º lugar = 8 pts -> total 24 pts >= 21) -> Gana la partida
+      roomManager.completarTurnoJugador(
+        codigo: sala.codigo,
+        jugadorId: 'usr_1',
+        coloresCompletados: ['morado'],
+      );
+      final salaFinal = roomManager.completarTurnoJugador(
+        codigo: sala.codigo,
+        jugadorId: 'usr_2',
+      );
+      expect(salaFinal.estadoSala, equals(EstadoSala.finalizada));
+      expect(salaFinal.ganadorId, equals('usr_1'));
+      expect(
+        salaFinal.jugadores.firstWhere((j) => j.id == 'usr_1').puntos,
+        equals(24),
+      );
+    });
   });
 
   group('Integración Servidor Shelf + 2 Clientes en Tiempo Real (WebSockets)', () {

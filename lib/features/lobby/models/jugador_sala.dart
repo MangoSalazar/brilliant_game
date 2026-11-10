@@ -7,6 +7,9 @@ class JugadorSala extends Equatable {
   final bool esListo;
   final bool esHost;
   final bool abandono;
+  final bool setupListo;
+  final bool turnoListo;
+  final int puntos;
 
   const JugadorSala({
     required this.id,
@@ -14,6 +17,9 @@ class JugadorSala extends Equatable {
     this.esListo = false,
     this.esHost = false,
     this.abandono = false,
+    this.setupListo = false,
+    this.turnoListo = false,
+    this.puntos = 0,
   });
 
   JugadorSala copyWith({
@@ -22,6 +28,9 @@ class JugadorSala extends Equatable {
     bool? esListo,
     bool? esHost,
     bool? abandono,
+    bool? setupListo,
+    bool? turnoListo,
+    int? puntos,
   }) {
     return JugadorSala(
       id: id ?? this.id,
@@ -29,6 +38,9 @@ class JugadorSala extends Equatable {
       esListo: esListo ?? this.esListo,
       esHost: esHost ?? this.esHost,
       abandono: abandono ?? this.abandono,
+      setupListo: setupListo ?? this.setupListo,
+      turnoListo: turnoListo ?? this.turnoListo,
+      puntos: puntos ?? this.puntos,
     );
   }
 
@@ -38,6 +50,9 @@ class JugadorSala extends Equatable {
         'esListo': esListo,
         'esHost': esHost,
         'abandono': abandono,
+        'setupListo': setupListo,
+        'turnoListo': turnoListo,
+        'puntos': puntos,
       };
 
   factory JugadorSala.fromJson(Map<String, dynamic> json) {
@@ -47,9 +62,21 @@ class JugadorSala extends Equatable {
       esListo: json['esListo'] as bool? ?? false,
       esHost: json['esHost'] as bool? ?? false,
       abandono: json['abandono'] as bool? ?? false,
+      setupListo: json['setupListo'] as bool? ?? false,
+      turnoListo: json['turnoListo'] as bool? ?? false,
+      puntos: json['puntos'] as int? ?? 0,
     );
   }
 
   @override
-  List<Object?> get props => [id, nombre, esListo, esHost, abandono];
+  List<Object?> get props => [
+        id,
+        nombre,
+        esListo,
+        esHost,
+        abandono,
+        setupListo,
+        turnoListo,
+        puntos,
+      ];
 }

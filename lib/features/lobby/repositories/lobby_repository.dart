@@ -93,6 +93,19 @@ abstract class LobbyRepository {
   /// Solicita iniciar la partida (exclusivo del Game Master cuando todos están listos).
   void startGame();
 
+  /// Notifica al servidor que el jugador actual completó la fase inicial de Setup.
+  void completeSetup() {}
+
+  /// Notifica al servidor que el jugador actual completó su turno en la ronda actual
+  /// (incluyendo opcionalmente los colores de las regiones que completó).
+  void completeTurn({
+    List<String> coloresCompletados = const [],
+    bool tableroLleno = false,
+  }) {}
+
+  /// Notifica al servidor que el jugador actual pasa su turno en la ronda actual.
+  void passTurn({bool tableroLleno = false}) {}
+
   /// Abandona la sala actual.
   void leaveRoom();
 
@@ -232,6 +245,9 @@ class WebSocketLobbyRepository implements LobbyRepository {
       switch (action) {
         case ConstantesJuego.wsEventoSalaCreada:
         case ConstantesJuego.wsEventoSalaActualizada:
+        case ConstantesJuego.wsEventoDadosLanzados:
+        case ConstantesJuego.wsEventoPuntuacionesActualizadas:
+        case ConstantesJuego.wsEventoPartidaFinalizada:
           _pendingRoomTimer?.cancel();
           _pendingRoomTimer = null;
           final salaJson = payload['sala'] as Map<String, dynamic>;
@@ -368,6 +384,35 @@ class WebSocketLobbyRepository implements LobbyRepository {
   @override
   void startGame() {
     _sendAction(ConstantesJuego.wsAccionIniciarPartida, {});
+  }
+
+  @override
+  void completeSetup() {
+    _sendAction(ConstantesJuego.wsAccionCompletarSetup, {});
+  }
+
+  @override
+  void completeTurn({
+    List<String> coloresCompletados = const [],
+    bool tableroLleno = false,
+  }) {
+    for (final colorId in coloresCompletados) {
+      _sendAction(ConstantesJuego.wsAccionCompletarRegion, {
+        'region_tipo': colorId,
+        'color_id': colorId,
+      });
+    }
+    _sendAction(ConstantesJuego.wsAccionCompletarTurno, {
+      'colores_completados': coloresCompletados,
+      'tablero_lleno': tableroLleno,
+    });
+  }
+
+  @override
+  void passTurn({bool tableroLleno = false}) {
+    _sendAction(ConstantesJuego.wsAccionPasarTurno, {
+      'tablero_lleno': tableroLleno,
+    });
   }
 
   @override

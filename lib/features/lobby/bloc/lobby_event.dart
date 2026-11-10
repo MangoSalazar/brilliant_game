@@ -72,6 +72,35 @@ class LobbyStartGameRequested extends LobbyEvent {
   const LobbyStartGameRequested();
 }
 
+/// Solicita confirmar al servidor que el jugador actual completó su Setup inicial.
+class LobbyCompleteSetupRequested extends LobbyEvent {
+  const LobbyCompleteSetupRequested();
+}
+
+/// Solicita confirmar al servidor la jugada realizada en la ronda actual.
+class LobbyCompleteTurnRequested extends LobbyEvent {
+  final List<String> coloresCompletados;
+  final bool tableroLleno;
+
+  const LobbyCompleteTurnRequested({
+    this.coloresCompletados = const [],
+    this.tableroLleno = false,
+  });
+
+  @override
+  List<Object?> get props => [coloresCompletados, tableroLleno];
+}
+
+/// Solicita al servidor pasar el turno en la ronda actual.
+class LobbyPassTurnRequested extends LobbyEvent {
+  final bool tableroLleno;
+
+  const LobbyPassTurnRequested({this.tableroLleno = false});
+
+  @override
+  List<Object?> get props => [tableroLleno];
+}
+
 /// Solicita abandonar la sala actual y volver al menú principal.
 class LobbyLeaveRoomRequested extends LobbyEvent {
   const LobbyLeaveRoomRequested();

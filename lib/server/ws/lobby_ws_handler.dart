@@ -224,6 +224,87 @@ class LobbyWsHandler {
           );
           break;
 
+        case ConstantesJuego.wsAccionCompletarSetup:
+          final codigo = _requireRoomCode(session, payload);
+          final salaAntes = _roomManager.obtenerSala(codigo);
+          final rondaAntes = salaAntes?.rondaActual ?? 0;
+          final sala = _roomManager.confirmarSetupJugador(
+            codigo: codigo,
+            jugadorId: session.userId,
+          );
+          final evento = (rondaAntes == 0 && sala.rondaActual >= 1)
+              ? ConstantesJuego.wsEventoDadosLanzados
+              : ConstantesJuego.wsEventoSalaActualizada;
+          _broadcastToRoom(
+            sala,
+            evento,
+            {
+              'sala': sala.toJson(),
+              if (sala.dadosActuales.length >= 2) ...{
+                'dado1': sala.dadosActuales[0],
+                'dado2': sala.dadosActuales[1],
+                'ronda': sala.rondaActual,
+              },
+            },
+          );
+          break;
+
+        case ConstantesJuego.wsAccionCompletarRegion:
+          final codigo = _requireRoomCode(session, payload);
+          final colorId =
+              (payload['region_tipo'] ?? payload['color_id'] ?? '').toString();
+          _roomManager.registrarRegionCompletada(
+            codigo: codigo,
+            jugadorId: session.userId,
+            colorId: colorId,
+          );
+          break;
+
+        case ConstantesJuego.wsAccionCompletarTurno:
+        case ConstantesJuego.wsAccionPasarTurno:
+          final codigo = _requireRoomCode(session, payload);
+          final salaAntes = _roomManager.obtenerSala(codigo);
+          final rondaAntes = salaAntes?.rondaActual ?? 0;
+          final rawColores = payload['colores_completados'] as List<dynamic>?;
+          final colores = rawColores != null
+              ? rawColores.map((e) => e.toString()).toList()
+              : <String>[
+                  if (payload['region_tipo'] != null)
+                    payload['region_tipo'].toString(),
+                ];
+          final tableroLleno = payload['tablero_lleno'] as bool? ?? false;
+
+          final sala = _roomManager.completarTurnoJugador(
+            codigo: codigo,
+            jugadorId: session.userId,
+            coloresCompletados: colores,
+            tableroLleno: tableroLleno,
+          );
+
+          final String evento;
+          if (sala.estadoSala == EstadoSala.finalizada) {
+            evento = ConstantesJuego.wsEventoPartidaFinalizada;
+          } else if (sala.rondaActual > rondaAntes) {
+            evento = ConstantesJuego.wsEventoDadosLanzados;
+          } else {
+            evento = ConstantesJuego.wsEventoSalaActualizada;
+          }
+
+          _broadcastToRoom(
+            sala,
+            evento,
+            {
+              'sala': sala.toJson(),
+              if (sala.dadosActuales.length >= 2) ...{
+                'dado1': sala.dadosActuales[0],
+                'dado2': sala.dadosActuales[1],
+                'ronda': sala.rondaActual,
+              },
+              if (sala.ganadorId != null) 'ganador_id': sala.ganadorId,
+            },
+          );
+          break;
+
         case ConstantesJuego.wsAccionSalirSala:
           _salirDeSalaActualSiExiste(session, porDesconexion: false);
           break;
