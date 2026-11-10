@@ -169,6 +169,50 @@ void main() {
       expect(salaRestante!.gameMasterId, equals('usr_2'));
       expect(salaRestante.jugadores.first.esHost, isTrue);
     });
+
+    test('Cuando un jugador abandona una partida ya empezada, no se elimina y los demás continúan jugando', () {
+      final sala = roomManager.crearSala(
+        jugadorId: 'usr_1',
+        nombreJugador: 'HostOriginal',
+      );
+      roomManager.unirseASala(
+        codigo: sala.codigo,
+        jugadorId: 'usr_2',
+        nombreJugador: 'SegundoJugador',
+      );
+      roomManager.cambiarEstadoListo(
+        codigo: sala.codigo,
+        jugadorId: 'usr_1',
+        listo: true,
+      );
+      roomManager.cambiarEstadoListo(
+        codigo: sala.codigo,
+        jugadorId: 'usr_2',
+        listo: true,
+      );
+      roomManager.iniciarPartida(
+        codigo: sala.codigo,
+        solicitanteId: 'usr_1',
+      );
+
+      final salaEnCurso = roomManager.removerJugador(
+        codigo: sala.codigo,
+        jugadorId: 'usr_1',
+      );
+
+      expect(salaEnCurso, isNotNull);
+      expect(salaEnCurso!.estadoSala, equals(EstadoSala.enJuego));
+      expect(salaEnCurso.jugadores.length, equals(2));
+      expect(
+        salaEnCurso.jugadores.firstWhere((j) => j.id == 'usr_1').abandono,
+        isTrue,
+      );
+      expect(
+        salaEnCurso.jugadores.firstWhere((j) => j.id == 'usr_2').abandono,
+        isFalse,
+      );
+      expect(salaEnCurso.gameMasterId, equals('usr_2'));
+    });
   });
 
   group('Integración Servidor Shelf + 2 Clientes en Tiempo Real (WebSockets)', () {

@@ -209,7 +209,10 @@ class RoomManager {
   }
 
   /// Remueve a un jugador cuando sale voluntariamente o se desconecta.
-  /// Si la sala queda vacía se elimina; si el Game Master sale, se transfiere el rol.
+  /// - Si la partida aún NO ha iniciado (Lobby): lo remueve de la lista.
+  /// - Si la partida YA está iniciada: no lo elimina de la lista ni cierra la partida;
+  ///   lo marca con `abandono: true` para que los demás jugadores puedan seguir jugando.
+  /// - Solo si todos los jugadores han abandonado o la sala queda vacía se elimina la sala.
   SalaPartida? removerJugador({
     required String codigo,
     required String jugadorId,
@@ -217,6 +220,41 @@ class RoomManager {
     final codigoLimpio = codigo.trim();
     final sala = _salas[codigoLimpio];
     if (sala == null) return null;
+
+    if (sala.partidaIniciada) {
+      final jugadoresMarcados = sala.jugadores.map((j) {
+        if (j.id == jugadorId) {
+          return j.copyWith(abandono: true, esHost: false);
+        }
+        return j;
+      }).toList();
+
+      final activos = jugadoresMarcados.where((j) => !j.abandono).toList();
+      if (activos.isEmpty) {
+        _salas.remove(codigoLimpio);
+        return null;
+      }
+
+      String nuevoGameMasterId = sala.gameMasterId;
+      List<JugadorSala> listaFinal = jugadoresMarcados;
+
+      if (sala.gameMasterId == jugadorId) {
+        nuevoGameMasterId = activos.first.id;
+        listaFinal = jugadoresMarcados.map((j) {
+          if (j.id == nuevoGameMasterId) {
+            return j.copyWith(esHost: true);
+          }
+          return j.copyWith(esHost: false);
+        }).toList();
+      }
+
+      final salaEnCurso = sala.copyWith(
+        gameMasterId: nuevoGameMasterId,
+        jugadores: listaFinal,
+      );
+      _salas[codigoLimpio] = salaEnCurso;
+      return salaEnCurso;
+    }
 
     final restantes =
         sala.jugadores.where((j) => j.id != jugadorId).toList();

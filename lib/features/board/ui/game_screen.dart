@@ -550,82 +550,109 @@ class _GameScreenState extends State<GameScreen> {
             runSpacing: 8,
             children: widget.sala.jugadores.map((JugadorSala j) {
               final esTu = j.id == widget.usuario.id;
+              final haAbandonado = j.abandono;
               final listoEnFase = esTu ? _setupConfirmadoLocalmente : false;
 
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0C0E1A),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: esTu
-                        ? const Color(0xFF3B82F6)
-                        : const Color(0xFF1E293B),
-                    width: esTu ? 1.5 : 1.0,
+              final String textoEstado = haAbandonado
+                  ? 'Abandonó la partida'
+                  : (listoEnFase ? 'Setup listo' : 'En preparación');
+              final Color colorEstado = haAbandonado
+                  ? const Color(0xFFF43F5E)
+                  : (listoEnFase
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFF94A3B8));
+
+              return Opacity(
+                opacity: haAbandonado ? 0.6 : 1.0,
+                child: Container(
+                  key: Key('game_player_score_card_${j.id}'),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
                   ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    FaIcon(
-                      j.esHost
-                          ? FontAwesomeIcons.crown
-                          : FontAwesomeIcons.userAstronaut,
-                      color: j.esHost
-                          ? const Color(0xFFF59E0B)
-                          : const Color(0xFF38BDF8),
-                      size: 12,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0C0E1A),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: haAbandonado
+                          ? const Color(0xFF7F1D1D)
+                          : (esTu
+                              ? const Color(0xFF3B82F6)
+                              : const Color(0xFF1E293B)),
+                      width: esTu ? 1.5 : 1.0,
                     ),
-                    const SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          esTu ? '${j.nombre} (TÚ)' : j.nombre,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FaIcon(
+                        haAbandonado
+                            ? FontAwesomeIcons.userSlash
+                            : (j.esHost
+                                ? FontAwesomeIcons.crown
+                                : FontAwesomeIcons.userAstronaut),
+                        color: haAbandonado
+                            ? const Color(0xFFF43F5E)
+                            : (j.esHost
+                                ? const Color(0xFFF59E0B)
+                                : const Color(0xFF38BDF8)),
+                        size: 12,
+                      ),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            esTu ? '${j.nombre} (TÚ)' : j.nombre,
+                            style: TextStyle(
+                              color: haAbandonado
+                                  ? const Color(0xFF94A3B8)
+                                  : Colors.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
+                              decoration: haAbandonado
+                                  ? TextDecoration.lineThrough
+                                  : TextDecoration.none,
+                            ),
+                          ),
+                          Text(
+                            textoEstado,
+                            style: TextStyle(
+                              color: colorEstado,
+                              fontSize: 10,
+                              fontWeight: haAbandonado
+                                  ? FontWeight.w700
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: const Color(0xFFF59E0B)
+                                .withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: const Text(
+                          '0 pts',
+                          style: TextStyle(
+                            color: Color(0xFFFBBF24),
+                            fontWeight: FontWeight.w900,
                             fontSize: 12,
                           ),
                         ),
-                        Text(
-                          listoEnFase ? 'Setup listo' : 'En preparación',
-                          style: TextStyle(
-                            color: listoEnFase
-                                ? const Color(0xFF10B981)
-                                : const Color(0xFF94A3B8),
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 9,
-                        vertical: 4,
                       ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E293B),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: const Color(0xFFF59E0B).withValues(alpha: 0.4),
-                        ),
-                      ),
-                      child: const Text(
-                        '0 pts',
-                        style: TextStyle(
-                          color: Color(0xFFFBBF24),
-                          fontWeight: FontWeight.w900,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             }).toList(),

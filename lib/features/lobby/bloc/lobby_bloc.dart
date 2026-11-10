@@ -149,8 +149,13 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     LobbyClearErrorRequested event,
     Emitter<LobbyState> emit,
   ) {
+    final nextStatus = state.sala != null
+        ? (state.sala!.partidaIniciada || state.status == LobbyStatus.inGame
+            ? LobbyStatus.inGame
+            : LobbyStatus.inLobby)
+        : LobbyStatus.initial;
     emit(state.copyWith(
-      status: state.sala != null ? LobbyStatus.inLobby : LobbyStatus.initial,
+      status: nextStatus,
       clearError: true,
     ));
   }
@@ -169,8 +174,10 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     final serverEvent = event.serverEvent;
     switch (serverEvent) {
       case LobbyRoomSynced(:final sala, :final notificacion):
+        final bool seguirEnJuego =
+            sala.partidaIniciada || state.status == LobbyStatus.inGame;
         emit(LobbyState(
-          status: LobbyStatus.inLobby,
+          status: seguirEnJuego ? LobbyStatus.inGame : LobbyStatus.inLobby,
           sala: sala,
           errorMessage: null,
           infoMessage: notificacion,

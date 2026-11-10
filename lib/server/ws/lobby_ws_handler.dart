@@ -250,7 +250,7 @@ class LobbyWsHandler {
         .trim();
     if (code.isEmpty) {
       for (final sala in _roomManager.salasActivas) {
-        if (sala.jugadores.any((j) => j.id == session.userId)) {
+        if (sala.jugadores.any((j) => j.id == session.userId && !j.abandono)) {
           code = sala.codigo;
           session.currentRoomCode = code;
           break;
@@ -307,7 +307,12 @@ class LobbyWsHandler {
       String? notificacion;
       final nombreSaliente = jugadorSaliente?.nombre ?? session.username;
       if (eraGameMaster) {
-        final nuevoHost = salaRestante.jugadores.first.nombre;
+        final nuevoHost = salaRestante.jugadores
+            .firstWhere(
+              (j) => j.id == salaRestante.gameMasterId,
+              orElse: () => salaRestante.jugadores.first,
+            )
+            .nombre;
         notificacion = ConstantesJuego.msgCambioGameMasterPorSalida(
           nombreSaliente,
           nuevoHost,
@@ -340,7 +345,10 @@ class LobbyWsHandler {
     String eventName,
     Map<String, dynamic> payload,
   ) {
-    final memberIds = sala.jugadores.map((j) => j.id).toSet();
+    final memberIds = sala.jugadores
+        .where((j) => !j.abandono)
+        .map((j) => j.id)
+        .toSet();
     for (final targetSession in _activeSessions) {
       if (targetSession.currentRoomCode == sala.codigo ||
           memberIds.contains(targetSession.userId)) {
