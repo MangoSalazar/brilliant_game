@@ -13,6 +13,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   final LobbyRepository _lobbyRepository;
   StreamSubscription<LobbyServerEvent>? _eventsSubscription;
   Usuario? _currentUser;
+  int _operationId = 0;
 
   LobbyBloc({
     required LobbyRepository lobbyRepository,
@@ -38,17 +39,19 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     LobbyCreateRoomRequested event,
     Emitter<LobbyState> emit,
   ) async {
+    final opId = ++_operationId;
     _currentUser = event.usuario;
-    emit(state.copyWith(
+    emit(const LobbyState(
       status: LobbyStatus.connecting,
-      clearError: true,
-      clearInfo: true,
     ));
 
     await _lobbyRepository.connect(
       usuario: event.usuario,
       token: event.token,
     );
+    if (opId != _operationId || state.status != LobbyStatus.connecting) {
+      return;
+    }
     _lobbyRepository.createRoom();
   }
 
@@ -56,17 +59,19 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     LobbyJoinRoomRequested event,
     Emitter<LobbyState> emit,
   ) async {
+    final opId = ++_operationId;
     _currentUser = event.usuario;
-    emit(state.copyWith(
+    emit(const LobbyState(
       status: LobbyStatus.connecting,
-      clearError: true,
-      clearInfo: true,
     ));
 
     await _lobbyRepository.connect(
       usuario: event.usuario,
       token: event.token,
     );
+    if (opId != _operationId || state.status != LobbyStatus.connecting) {
+      return;
+    }
     _lobbyRepository.joinRoom(event.codigoSala);
   }
 
@@ -141,6 +146,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     LobbyLeaveRoomRequested event,
     Emitter<LobbyState> emit,
   ) {
+    ++_operationId;
     _lobbyRepository.leaveRoom();
     emit(const LobbyState(status: LobbyStatus.initial));
   }
@@ -174,6 +180,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     final serverEvent = event.serverEvent;
     switch (serverEvent) {
       case LobbyRoomSynced(:final sala, :final notificacion):
+        if (state.status == LobbyStatus.initial) return;
         final bool seguirEnJuego =
             sala.partidaIniciada || state.status == LobbyStatus.inGame;
         emit(LobbyState(
@@ -185,6 +192,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         break;
 
       case LobbyGameStarted(:final sala):
+        if (state.status == LobbyStatus.initial) return;
         emit(LobbyState(
           status: LobbyStatus.inGame,
           sala: sala,

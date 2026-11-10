@@ -127,38 +127,82 @@ class LobbyScreen extends StatelessWidget {
         if (sala == null) {
           return Scaffold(
             backgroundColor: const Color(0xFF0C0E1A),
+            appBar: AppBar(
+              backgroundColor: const Color(0xFF141728),
+              elevation: 0,
+              leading: IconButton(
+                key: const Key('lobby_cancel_connecting_back_button'),
+                tooltip: 'Cancelar y volver al menú',
+                onPressed: () {
+                  context
+                      .read<LobbyBloc>()
+                      .add(const LobbyLeaveRoomRequested());
+                },
+                icon: const FaIcon(
+                  FontAwesomeIcons.arrowLeft,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+              title: const Text(
+                'CONECTANDO A LA SALA...',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
             body: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const CircularProgressIndicator(color: Color(0xFF7C3AED)),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Sincronizando con el servidor Shelf...',
-                    style: TextStyle(
-                      color: Color(0xFFCBD5E1),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(color: Color(0xFF7C3AED)),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Sincronizando con el servidor Shelf...',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xFFCBD5E1),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  TextButton.icon(
-                    onPressed: () {
-                      context
-                          .read<LobbyBloc>()
-                          .add(const LobbyLeaveRoomRequested());
-                    },
-                    icon: const FaIcon(
-                      FontAwesomeIcons.arrowLeft,
-                      size: 14,
-                      color: Color(0xFF94A3B8),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      key: const Key('lobby_cancel_connecting_button'),
+                      onPressed: () {
+                        context
+                            .read<LobbyBloc>()
+                            .add(const LobbyLeaveRoomRequested());
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E293B),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: const BorderSide(color: Color(0xFF475569)),
+                        ),
+                      ),
+                      icon: const FaIcon(
+                        FontAwesomeIcons.xmark,
+                        size: 14,
+                        color: Color(0xFFF43F5E),
+                      ),
+                      label: const Text(
+                        'Cancelar y volver al menú',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
                     ),
-                    label: const Text(
-                      'Cancelar y volver al menú',
-                      style: TextStyle(color: Color(0xFF94A3B8)),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );

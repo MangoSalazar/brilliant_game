@@ -290,5 +290,47 @@ void main() {
         expect(find.text('58129'), findsOneWidget);
       },
     );
+
+    testWidgets(
+      'Permite cancelar inmediatamente la creación de sala cuando el servidor no está disponible',
+      (tester) async {
+        final fakeRepo = _FakeLobbyRepository();
+        late LobbyBloc lobbyBloc;
+
+        await tester.pumpWidget(
+          MultiBlocProvider(
+            providers: [
+              BlocProvider<AuthBloc>(
+                create: (_) => AuthBloc(
+                  authRepository:
+                      LocalAuthRepository(simulatedDelay: Duration.zero),
+                ),
+              ),
+              BlocProvider<LobbyBloc>(
+                create: (_) {
+                  lobbyBloc = LobbyBloc(lobbyRepository: fakeRepo);
+                  return lobbyBloc;
+                },
+              ),
+            ],
+            child: const MaterialApp(
+              home: LobbyScreen(usuarioActual: hostUser),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        // Mientras sala == null (intentando conectar con servidor no disponible), aparece el botón de cancelar
+        final cancelBtn =
+            find.byKey(const Key('lobby_cancel_connecting_button'));
+        expect(cancelBtn, findsOneWidget);
+
+        await tester.tap(cancelBtn);
+        await tester.pump();
+
+        expect(lobbyBloc.state.status.name, equals('initial'));
+      },
+    );
   });
 }

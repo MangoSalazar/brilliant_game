@@ -108,6 +108,7 @@ class WebSocketLobbyRepository implements LobbyRepository {
   WebSocketChannel? _channel;
   StreamSubscription<dynamic>? _channelSubscription;
   Timer? _heartbeatTimer;
+  Timer? _pendingRoomTimer;
   Usuario? _currentUser;
   String? _activeRoomCode;
   bool _isIntentionalClose = false;
@@ -151,12 +152,29 @@ class WebSocketLobbyRepository implements LobbyRepository {
 
     try {
       final factory = _channelFactory ?? WebSocketChannel.connect;
-      _channel = factory(uri);
+      final channel = factory(uri);
+      _channel = channel;
 
-      _channelSubscription = _channel!.stream.listen(
+      unawaited(
+        channel.ready.timeout(const Duration(seconds: 4)).catchError((_) {
+          if (!_isIntentionalClose && identical(_channel, channel)) {
+            _isIntentionalClose = true;
+            _cleanupSocket();
+            _eventsController.add(
+              const LobbyErrorOccurred(
+                'No se pudo conectar con el servidor Shelf. Verifica que esté en ejecución (dart run bin/server.dart).',
+              ),
+            );
+          }
+        }),
+      );
+
+      _channelSubscription = channel.stream.listen(
         _onRawMessage,
         onError: (_) {
+          if (_isIntentionalClose) return;
           final wasInRoom = _activeRoomCode != null;
+          _isIntentionalClose = true;
           _cleanupSocket();
           if (wasInRoom) {
             _eventsController.add(
@@ -171,12 +189,22 @@ class WebSocketLobbyRepository implements LobbyRepository {
           }
         },
         onDone: () {
-          final shouldNotifyLoss = !_isIntentionalClose && _activeRoomCode != null;
+          final wasIntentional = _isIntentionalClose;
+          final hadActiveRoom = _activeRoomCode != null;
+          _isIntentionalClose = true;
           _cleanupSocket();
-          if (shouldNotifyLoss) {
-            _eventsController.add(
-              const LobbyConnectionLost(ConstantesJuego.errorConexionPerdida),
-            );
+          if (!wasIntentional) {
+            if (hadActiveRoom) {
+              _eventsController.add(
+                const LobbyConnectionLost(ConstantesJuego.errorConexionPerdida),
+              );
+            } else {
+              _eventsController.add(
+                const LobbyErrorOccurred(
+                  'No se pudo conectar con el servidor Shelf. Verifica que esté en ejecución (dart run bin/server.dart).',
+                ),
+              );
+            }
           }
         },
       );
@@ -204,6 +232,8 @@ class WebSocketLobbyRepository implements LobbyRepository {
       switch (action) {
         case ConstantesJuego.wsEventoSalaCreada:
         case ConstantesJuego.wsEventoSalaActualizada:
+          _pendingRoomTimer?.cancel();
+          _pendingRoomTimer = null;
           final salaJson = payload['sala'] as Map<String, dynamic>;
           final sala = SalaPartida.fromJson(salaJson);
           final notificacion = payload['notificacion'] as String?;
@@ -214,6 +244,8 @@ class WebSocketLobbyRepository implements LobbyRepository {
           break;
 
         case ConstantesJuego.wsEventoPartidaIniciada:
+          _pendingRoomTimer?.cancel();
+          _pendingRoomTimer = null;
           final salaJson = payload['sala'] as Map<String, dynamic>;
           final sala = SalaPartida.fromJson(salaJson);
           _activeRoomCode = sala.codigo;
@@ -221,6 +253,8 @@ class WebSocketLobbyRepository implements LobbyRepository {
           break;
 
         case ConstantesJuego.wsEventoJugadorExpulsado:
+          _pendingRoomTimer?.cancel();
+          _pendingRoomTimer = null;
           _activeRoomCode = null;
           final msg = payload['mensaje'] as String? ??
               ConstantesJuego.msgJugadorExpulsado;
@@ -228,6 +262,8 @@ class WebSocketLobbyRepository implements LobbyRepository {
           break;
 
         case ConstantesJuego.wsEventoError:
+          _pendingRoomTimer?.cancel();
+          _pendingRoomTimer = null;
           final msg =
               payload['mensaje'] as String? ?? 'Error desconocido en la sala.';
           _eventsController.add(LobbyErrorOccurred(msg));
@@ -277,14 +313,31 @@ class WebSocketLobbyRepository implements LobbyRepository {
     }
   }
 
+  void _startPendingRoomTimeout() {
+    _pendingRoomTimer?.cancel();
+    _pendingRoomTimer = Timer(const Duration(seconds: 5), () {
+      if (_activeRoomCode == null && !_isIntentionalClose) {
+        _isIntentionalClose = true;
+        _cleanupSocket();
+        _eventsController.add(
+          const LobbyErrorOccurred(
+            'El servidor no está disponible en este momento. Verifica que esté en ejecución.',
+          ),
+        );
+      }
+    });
+  }
+
   @override
   void createRoom() {
+    _startPendingRoomTimeout();
     _sendAction(ConstantesJuego.wsAccionCrearSala, {});
   }
 
   @override
   void joinRoom(String roomCode) {
     final cleanCode = roomCode.trim();
+    _startPendingRoomTimeout();
     _sendAction(ConstantesJuego.wsAccionUnirseSala, {
       'room_code': cleanCode,
     });
@@ -319,30 +372,36 @@ class WebSocketLobbyRepository implements LobbyRepository {
 
   @override
   void leaveRoom() {
-    _activeRoomCode = null;
-    _sendAction(ConstantesJuego.wsAccionSalirSala, {});
+    _pendingRoomTimer?.cancel();
+    _pendingRoomTimer = null;
+    if (_activeRoomCode != null) {
+      _activeRoomCode = null;
+      _sendAction(ConstantesJuego.wsAccionSalirSala, {});
+    } else {
+      // Si estaba intentando conectar y el usuario canceló la solicitud, cerrar el socket pendiente de inmediato
+      _isIntentionalClose = true;
+      _cleanupSocket();
+    }
   }
 
   void _cleanupSocket() {
     _activeRoomCode = null;
+    _pendingRoomTimer?.cancel();
+    _pendingRoomTimer = null;
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
     _channelSubscription?.cancel();
     _channelSubscription = null;
+    final oldChannel = _channel;
     _channel = null;
+    if (oldChannel != null) {
+      unawaited(oldChannel.sink.close().catchError((_) {}));
+    }
   }
 
   @override
   Future<void> disconnect() async {
     _isIntentionalClose = true;
-    _activeRoomCode = null;
-    _heartbeatTimer?.cancel();
-    _heartbeatTimer = null;
-    await _channelSubscription?.cancel();
-    _channelSubscription = null;
-    try {
-      await _channel?.sink.close();
-    } catch (_) {}
-    _channel = null;
+    _cleanupSocket();
   }
 }
