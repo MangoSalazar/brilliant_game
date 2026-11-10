@@ -234,7 +234,7 @@ void main() {
       await server.close(force: true);
     });
 
-    test('Endpoints REST /api/auth/login y /api/auth/register funcionan correctamente', () async {
+    test('Endpoints REST /api/auth/login, bloqueo de cuenta duplicada activa y /api/auth/logout funcionan correctamente', () async {
       final loginResponse = await http.post(
         Uri.parse('$httpBaseUrl/api/auth/login'),
         headers: {'content-type': 'application/json'},
@@ -243,8 +243,41 @@ void main() {
 
       expect(loginResponse.statusCode, equals(200));
       final loginBody = jsonDecode(loginResponse.body) as Map<String, dynamic>;
-      expect(loginBody['token'], isNotEmpty);
+      final token = loginBody['token'] as String;
+      expect(token, isNotEmpty);
       expect(loginBody['usuario']['username'], equals('mango'));
+
+      // Intentar iniciar sesión por segunda vez con 'mango' mientras ya está activo -> debe rechazarse (409)
+      final duplicateLoginResponse = await http.post(
+        Uri.parse('$httpBaseUrl/api/auth/login'),
+        headers: {'content-type': 'application/json'},
+        body: jsonEncode({'username': 'mango', 'password': 'mango123'}),
+      );
+      expect(duplicateLoginResponse.statusCode, equals(409));
+      final duplicateBody =
+          jsonDecode(duplicateLoginResponse.body) as Map<String, dynamic>;
+      expect(
+        duplicateBody['error'],
+        equals(ConstantesJuego.errorSesionYaActiva),
+      );
+
+      // Cerrar sesión de 'mango' -> libera la cuenta y permite volver a entrar
+      final logoutResponse = await http.post(
+        Uri.parse('$httpBaseUrl/api/auth/logout'),
+        headers: {
+          'content-type': 'application/json',
+          'authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'username': 'mango'}),
+      );
+      expect(logoutResponse.statusCode, equals(200));
+
+      final reloginResponse = await http.post(
+        Uri.parse('$httpBaseUrl/api/auth/login'),
+        headers: {'content-type': 'application/json'},
+        body: jsonEncode({'username': 'mango', 'password': 'mango123'}),
+      );
+      expect(reloginResponse.statusCode, equals(200));
 
       final registerResponse = await http.post(
         Uri.parse('$httpBaseUrl/api/auth/register'),

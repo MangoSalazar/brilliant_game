@@ -338,6 +338,16 @@ class LobbyWsHandler {
   void _handleDisconnect(_ClientSession session) {
     _activeSessions.remove(session);
     _salirDeSalaActualSiExiste(session, porDesconexion: true);
+
+    final sigueConectado = _activeSessions.any(
+      (s) => s.userId == session.userId,
+    );
+    if (!sigueConectado) {
+      _authService.logout(
+        userId: session.userId,
+        username: session.username,
+      );
+    }
   }
 
   void _broadcastToRoom(

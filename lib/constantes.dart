@@ -120,6 +120,8 @@ abstract final class ConstantesJuego {
   static const String errorSoloHostInicia = 'Solo el Game Master puede iniciar la partida.';
   static const String errorSoloHostExpulsa = 'Solo el Game Master puede expulsar a otros jugadores.';
   static const String errorCredencialesInvalidas = 'Usuario o contraseña incorrectos.';
+  static const String errorSesionYaActiva =
+      'Esta cuenta ya tiene una sesión activa en otro dispositivo o ventana.';
 
   // ==========================================
   // Textos de Estado del Juego

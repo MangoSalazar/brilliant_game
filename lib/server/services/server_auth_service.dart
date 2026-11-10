@@ -33,6 +33,9 @@ class ServerAuthService {
   /// Mapa de tokens activos -> Usuario.
   final Map<String, Usuario> _activeTokens = {};
 
+  /// Conjunto de IDs de usuario que tienen una sesión activa actualmente.
+  final Set<String> _activeUserIds = {};
+
   ServerAuthService() {
     // Precargar cuentas de prueba para facilitar pruebas multijugador inmediatas
     _seedUser('mango', 'mango123');
@@ -107,11 +110,13 @@ class ServerAuthService {
 
     final token = _generateToken(usuario);
     _activeTokens[token] = usuario;
+    _activeUserIds.add(usuario.id);
 
     return ServerAuthResult(usuario: usuario, token: token);
   }
 
   /// Autentica un usuario existente y genera un token de sesión.
+  /// Rechaza el inicio de sesión si la cuenta ya se encuentra activa.
   ServerAuthResult login({
     required String username,
     required String password,
@@ -131,10 +136,51 @@ class ServerAuthService {
     }
 
     final usuario = _usersByNormalizedName[normalizedUser]!;
+
+    if (_activeUserIds.contains(usuario.id)) {
+      throw const AuthException(ConstantesJuego.errorSesionYaActiva);
+    }
+
     final token = _generateToken(usuario);
     _activeTokens[token] = usuario;
+    _activeUserIds.add(usuario.id);
 
     return ServerAuthResult(usuario: usuario, token: token);
+  }
+
+  /// Verifica si un usuario ya tiene una sesión activa en el servidor.
+  bool isUserActive(String userId) => _activeUserIds.contains(userId);
+
+  /// Cierra la sesión activa de un usuario por token, userId o username,
+  /// liberando la cuenta para futuros inicios de sesión.
+  void logout({
+    String? token,
+    String? userId,
+    String? username,
+  }) {
+    if (token != null && token.isNotEmpty) {
+      final cleanToken = token.startsWith('Bearer ')
+          ? token.substring(7).trim()
+          : token.trim();
+      final user = _activeTokens.remove(cleanToken);
+      if (user != null) {
+        _activeUserIds.remove(user.id);
+      }
+    }
+
+    if (userId != null && userId.isNotEmpty) {
+      _activeUserIds.remove(userId);
+      _activeTokens.removeWhere((_, u) => u.id == userId);
+    }
+
+    if (username != null && username.isNotEmpty) {
+      final normalized = username.trim().toLowerCase();
+      final user = _usersByNormalizedName[normalized];
+      if (user != null) {
+        _activeUserIds.remove(user.id);
+        _activeTokens.removeWhere((_, u) => u.id == user.id);
+      }
+    }
   }
 
   /// Verifica un token de sesión y retorna el [Usuario] asociado, o `null` si es inválido.

@@ -83,11 +83,16 @@ class RoomManager {
       throw const RoomException(ConstantesJuego.errorPartidaYaIniciada);
     }
 
-    // Si el jugador ya se encuentra dentro de la sala, devolver la sala
-    final indiceExistente =
-        sala.jugadores.indexWhere((j) => j.id == jugadorId);
+    // Rechazar si ya hay un jugador activo con esa misma cuenta/nombre en la sala
+    final indiceExistente = sala.jugadores.indexWhere(
+      (j) =>
+          !j.abandono &&
+          (j.id == jugadorId ||
+              j.nombre.trim().toLowerCase() ==
+                  nombreJugador.trim().toLowerCase()),
+    );
     if (indiceExistente != -1) {
-      return sala;
+      throw const RoomException(ConstantesJuego.errorSesionYaActiva);
     }
 
     if (sala.estaLlena) {

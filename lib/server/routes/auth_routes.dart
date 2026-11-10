@@ -15,6 +15,7 @@ class AuthRoutes {
 
     router.post('/register', _handleRegister);
     router.post('/login', _handleLogin);
+    router.post('/logout', _handleLogout);
     router.get('/me', _handleMe);
 
     return router;
@@ -74,8 +75,10 @@ class AuthRoutes {
         headers: _jsonHeaders,
       );
     } on AuthException catch (e) {
+      final statusCode =
+          e.message.contains('sesión activa') ? 409 : 401;
       return Response(
-        401,
+        statusCode,
         body: jsonEncode({'error': e.message}),
         headers: _jsonHeaders,
       );
@@ -86,6 +89,34 @@ class AuthRoutes {
         headers: _jsonHeaders,
       );
     }
+  }
+
+  Future<Response> _handleLogout(Request request) async {
+    final authHeader = request.headers['authorization'];
+    String? userId;
+    String? username;
+    String? bodyToken;
+
+    try {
+      final bodyStr = await request.readAsString();
+      if (bodyStr.isNotEmpty) {
+        final body = jsonDecode(bodyStr) as Map<String, dynamic>;
+        userId = body['userId'] as String?;
+        username = body['username'] as String?;
+        bodyToken = body['token'] as String?;
+      }
+    } catch (_) {}
+
+    _authService.logout(
+      token: authHeader ?? bodyToken,
+      userId: userId,
+      username: username,
+    );
+
+    return Response.ok(
+      jsonEncode({'status': 'logged_out'}),
+      headers: _jsonHeaders,
+    );
   }
 
   Future<Response> _handleMe(Request request) async {

@@ -145,8 +145,32 @@ class RemoteAuthRepository implements AuthRepository {
 
   @override
   Future<void> logout() async {
+    final user = _currentUser;
+    final token = _currentToken;
     _currentUser = null;
     _currentToken = null;
+
+    try {
+      final uri = Uri.parse('$baseUrl/api/auth/logout');
+      await _httpClient
+          .post(
+            uri,
+            headers: {
+              'content-type': 'application/json; charset=utf-8',
+              if (token != null && token.isNotEmpty)
+                'authorization': 'Bearer $token',
+            },
+            body: jsonEncode({
+              if (user != null) 'userId': user.id,
+              if (user != null) 'username': user.username,
+              if (token != null) 'token': token,
+            }),
+          )
+          .timeout(const Duration(seconds: 3));
+    } catch (_) {
+      // Ignorar si el servidor está apagado al cerrar sesión
+    }
+
     await _fallbackLocal.logout();
   }
 }
