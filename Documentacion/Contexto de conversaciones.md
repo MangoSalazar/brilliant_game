@@ -168,6 +168,40 @@ A requerimiento explícito del diseño de arquitectura, se formalizó y delimit�
 
 ---
 
+### Sesión: 9 de Noviembre de 2026
+
+#### 1. Robustez en Salas de Espera (Lobby) y Cuentas Activas Únicas
+- **Gestión de Desconexiones y Transferencia de Game Master:**
+  - Si un jugador pierde la conexión en el lobby, se remueve de inmediato, regresa a `MainMenuScreen` y el resto de la sala recibe una notificación informativa.
+  - Si el Game Master sale o se desconecta, el rol se transfiere automáticamente al jugador activo más antiguo y se muestra un diálogo de confirmación antes de abandonar voluntariamente.
+- **Alternancia Libre del Botón "Listo" y Bloqueo de Partida Iniciada:**
+  - El botón de estado Listo permite alternar libremente entre `"MARCARME COMO LISTO"` y `"CANCELAR LISTO"` en cualquier momento sin reiniciarse al cambiar de mapa.
+  - Se bloquea el ingreso a salas cuya partida ya ha comenzado (`ConstantesJuego.errorPartidaYaIniciada`).
+  - Se corrigió la cancelación inmediata al crear/unirse a una sala cuando el servidor Shelf no está disponible (`lobby_cancel_connecting_button`).
+- **Prevención de Cuentas Duplicadas en Uso (`ServerAuthService` y `AuthRoutes`):**
+  - El servidor rastrea las sesiones activas (`_activeUserIds`) e impide iniciar sesión o entrar a una sala con una cuenta que ya se encuentra activa en otra ventana/dispositivo (`409 Conflict` con `ConstantesJuego.errorSesionYaActiva`), liberándola automáticamente al cerrar sesión (`POST /api/auth/logout`) o desconectarse del WebSocket.
+
+#### 2. Diseño e Implementación de los 4 Mapas Oficiales (7×7) y Pantalla de Partida (`GameScreen`)
+- **Fábrica de los 4 Mapas Predefinidos ([`lib/mapas_juego.dart`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/mapas_juego.dart)):**
+  - Se implementó `MapasJuego` a partir de las matrices corregidas de 7×7 en `Documentacion/Mapas del juego.txt`, agrupando por componentes conexos cada bloque de color (y región amarilla dispersa) y asignando las 6 casillas iniciales de preparación de cada mapa.
+- **Distribución de `GameScreen` ([`lib/features/board/ui/game_screen.dart`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/board/ui/game_screen.dart)):**
+  - **Columna Izquierda:** Panel de **Reglas y Puntos en Disputa**, donde cada zona muestra sus 3 escalas (`1.º`, `2.º`, `3.º`) e ilumina en el color de la zona únicamente la puntuación que está actualmente en disputa.
+  - **Columna Central (de arriba hacia abajo):**
+    1. **Apartado de Puntuaciones de la Sala** encima del tablero (mostrando puntos en vivo y estado de cada jugador; si un jugador abandona con la partida ya empezada, permanece en la lista marcado como `"Abandonó la partida"` con `abandono: true` para que los demás sigan jugando).
+    2. **Apartado de Resultados de los Dados** ubicado entre las puntuaciones y el tablero.
+    3. **Tablero Interactivo 7×7** debajo de los dados.
+  - **Columna Derecha:** Panel de Acción contextual según la fase (Setup de fichas `1..6`, Ronda activa con Dado Ancla o Podio Final).
+
+#### 3. Ciclo Completo de Partidas Multijugador en Tiempo Real
+- **Fase 1 (Setup Sincronizado):** Cuando todos los jugadores activos confirman sus 6 números iniciales (`setup_completed`), el servidor inicia automáticamente la **Ronda 1** y lanza los **2 dados globales** (`dice_rolled`).
+- **Fase 2 (Dado Ancla y Acomodo):** Cada jugador elige uno de los 2 dados globales como **Dado Ancla** (cuyo valor debe existir en su tablero) y coloca el **otro dado** en una casilla vacía adyacente ortogonalmente al número Ancla que cumpla la regla de color de la región, o bien pasa su turno (`pass_turn`).
+- **Arbitraje de Puntos, Empates y Victoria (`RoomManager`):**
+  - Al cierre de cada ronda, el servidor adjudica los puntos de las regiones completadas (otorgando el mismo puntaje en disputa si dos o más jugadores completan el mismo color en la misma ronda), avanza el indicador encendido de `1.º -> 2.º -> 3.º` lugar en el panel de reglas y proclama al ganador en cuanto algún jugador alcanza **21 o más puntos** (`EstadoSala.finalizada`).
+- **Pruebas y Calidad:**
+  - Se alcanzaron **70 pruebas automatizadas aprobadas** (`flutter test`) y cero advertencias en `flutter analyze`.
+
+---
+
 ## 🎯 Siguientes Pasos
-1. Desarrollar la interfaz interactiva del tablero de partida (Fase de Setup de los 6 números iniciales y Fase de Rondas con tirada global de dados del servidor).
-2. Integrar en el handler WebSocket del servidor los eventos de partida (`dice_rolled`, `region_completed`, `scores_updated` y `game_over`).
+1. Realizar pruebas de experiencia de usuario multijugador con varias ventanas/clientes simultáneos en navegador y ajustar detalles visuales o animaciones de transición entre rondas si se requiere.
+2. Evaluar si se desea agregar un temporizador opcional por ronda o revancha rápida dentro de la misma sala al finalizar una partida.
