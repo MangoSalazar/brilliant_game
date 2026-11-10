@@ -328,9 +328,11 @@ class _GameScreenState extends State<GameScreen> {
                 builder: (context, constraints) {
                   final bool isWide = constraints.maxWidth >= 980;
 
-                  final leftColumn = _buildLeftColumn(
+                  final leftRulesColumn = _buildLeftRulesColumn(
                     tablero: tablero,
                   );
+                  final topScoresSection = _buildTopPlayersScoresSection();
+                  final diceResultsSection = _buildDiceResultsSection();
                   final centerBoard = _buildCenterBoardSection(
                     tablero: tablero,
                     casillasIniciales: casillasIniciales,
@@ -342,25 +344,49 @@ class _GameScreenState extends State<GameScreen> {
                     todosColocados: todosColocados,
                   );
 
+                  final centerStack = Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // 1. Apartado de Puntuaciones (encima de todo en la columna central)
+                      topScoresSection,
+                      const SizedBox(height: 14),
+                      // 2. Apartado de Resultados de los Dados (entre las puntuaciones y el tablero)
+                      diceResultsSection,
+                      const SizedBox(height: 14),
+                      // 3. Tablero 7x7 (debajo de los dados)
+                      centerBoard,
+                    ],
+                  );
+
                   if (isWide) {
                     return Padding(
                       padding: const EdgeInsets.all(18),
                       child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SizedBox(
-                            width: 300,
-                            child: SingleChildScrollView(child: leftColumn),
+                            width: 290,
+                            child: SingleChildScrollView(
+                              child: leftRulesColumn,
+                            ),
                           ),
                           const SizedBox(width: 18),
                           Expanded(
-                            child: Center(
-                              child: SingleChildScrollView(child: centerBoard),
+                            child: SingleChildScrollView(
+                              child: Center(
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: 560,
+                                  ),
+                                  child: centerStack,
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 18),
                           SizedBox(
-                            width: 290,
+                            width: 280,
                             child: SingleChildScrollView(child: rightColumn),
                           ),
                         ],
@@ -373,11 +399,11 @@ class _GameScreenState extends State<GameScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        centerBoard,
+                        centerStack,
                         const SizedBox(height: 16),
                         rightColumn,
                         const SizedBox(height: 16),
-                        leftColumn,
+                        leftRulesColumn,
                       ],
                     ),
                   );
@@ -484,178 +510,291 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  /// Columna Izquierda: Jugadores (Meta 21 pts) + Reglas y Puntos (con puntuación en disputa encendida).
-  Widget _buildLeftColumn({required Tablero tablero}) {
-    final reglas = _obtenerReglasDelMapa(tablero);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // 1. Panel de Jugadores
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF141728),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFF222845)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  /// Apartado de Puntuaciones ubicado encima del tablero (con resultados de dados en medio).
+  Widget _buildTopPlayersScoresSection() {
+    return Container(
+      key: const Key('players_scores_top_section'),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF141728),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF222845)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
             children: [
-              Row(
-                children: [
-                  const FaIcon(
-                    FontAwesomeIcons.trophy,
-                    color: Color(0xFFF59E0B),
-                    size: 14,
-                  ),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'JUGADORES (META 21 PTS)',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                  ),
-                ],
+              FaIcon(
+                FontAwesomeIcons.trophy,
+                color: Color(0xFFF59E0B),
+                size: 13,
               ),
-              const SizedBox(height: 12),
-              ...widget.sala.jugadores.map((JugadorSala j) {
-                final esTu = j.id == widget.usuario.id;
-                final listoEnFase = esTu ? _setupConfirmadoLocalmente : false;
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'PUNTUACIONES DE LA SALA (META: 21 PUNTOS)',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            children: widget.sala.jugadores.map((JugadorSala j) {
+              final esTu = j.id == widget.usuario.id;
+              final listoEnFase = esTu ? _setupConfirmadoLocalmente : false;
 
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0C0E1A),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: esTu
+                        ? const Color(0xFF3B82F6)
+                        : const Color(0xFF1E293B),
+                    width: esTu ? 1.5 : 1.0,
                   ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0C0E1A),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: esTu
-                          ? const Color(0xFF3B82F6)
-                          : const Color(0xFF1E293B),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FaIcon(
+                      j.esHost
+                          ? FontAwesomeIcons.crown
+                          : FontAwesomeIcons.userAstronaut,
+                      color: j.esHost
+                          ? const Color(0xFFF59E0B)
+                          : const Color(0xFF38BDF8),
+                      size: 12,
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      FaIcon(
-                        j.esHost
-                            ? FontAwesomeIcons.crown
-                            : FontAwesomeIcons.userAstronaut,
-                        color: j.esHost
-                            ? const Color(0xFFF59E0B)
-                            : const Color(0xFF38BDF8),
-                        size: 13,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              esTu ? '${j.nombre} (TÚ)' : j.nombre,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              listoEnFase ? 'Setup listo' : 'Armando tablero...',
-                              style: TextStyle(
-                                color: listoEnFase
-                                    ? const Color(0xFF10B981)
-                                    : const Color(0xFF94A3B8),
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Text(
-                          '0 pts',
-                          style: TextStyle(
-                            color: Color(0xFFFBBF24),
+                    const SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          esTu ? '${j.nombre} (TÚ)' : j.nombre,
+                          style: const TextStyle(
+                            color: Colors.white,
                             fontWeight: FontWeight.w800,
                             fontSize: 12,
                           ),
                         ),
+                        Text(
+                          listoEnFase ? 'Setup listo' : 'En preparación',
+                          style: TextStyle(
+                            color: listoEnFase
+                                ? const Color(0xFF10B981)
+                                : const Color(0xFF94A3B8),
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 4,
                       ),
-                    ],
-                  ),
-                );
-              }),
-            ],
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E293B),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: const Color(0xFFF59E0B).withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: const Text(
+                        '0 pts',
+                        style: TextStyle(
+                          color: Color(0xFFFBBF24),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
           ),
+        ],
+      ),
+    );
+  }
+
+  /// Apartado de Resultados de los Dados ubicado entre las puntuaciones y el tablero.
+  Widget _buildDiceResultsSection() {
+    return Container(
+      key: const Key('dice_results_section'),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1E1B4B), Color(0xFF141728)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-
-        const SizedBox(height: 16),
-
-        // 2. Panel de Reglas y Puntos con la puntuación en disputa encendida del color de la zona
-        Container(
-          key: const Key('rules_and_points_panel'),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF141728),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFF222845)),
-          ),
-          child: Column(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF4338CA), width: 1.3),
+      ),
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 16,
+        runSpacing: 12,
+        children: [
+          const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Row(
+              Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   FaIcon(
-                    FontAwesomeIcons.palette,
-                    color: Color(0xFF38BDF8),
+                    FontAwesomeIcons.dice,
+                    color: Color(0xFFA855F7),
                     size: 14,
                   ),
                   SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'REGLAS Y PUNTOS EN DISPUTA',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
-                      ),
+                  Text(
+                    'RESULTADOS DE LOS DADOS',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.9,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              const Text(
-                'El puntaje encendido en el color de la zona es el que está actualmente en juego:',
+              SizedBox(height: 4),
+              Text(
+                'Se lanzarán al finalizar la fase de Setup de todos los jugadores',
                 style: TextStyle(
                   color: Color(0xFF94A3B8),
                   fontSize: 11,
-                  height: 1.3,
                 ),
               ),
-              const SizedBox(height: 12),
-              ...reglas.map(_buildReglaZonaCard),
             ],
           ),
-        ),
-      ],
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDiePlaceholderBox(label: 'DADO 1'),
+              const SizedBox(width: 10),
+              _buildDiePlaceholderBox(label: 'DADO 2'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDiePlaceholderBox({required String label}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0C0E1A),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF312E81), width: 1.4),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const FaIcon(
+            FontAwesomeIcons.diceD6,
+            color: Color(0xFF6366F1),
+            size: 16,
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Color(0xFF94A3B8),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const Text(
+                '-',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Columna Izquierda: Reglas y Puntos en Disputa (con puntuación en disputa encendida del color de la zona).
+  Widget _buildLeftRulesColumn({required Tablero tablero}) {
+    final reglas = _obtenerReglasDelMapa(tablero);
+
+    return Container(
+      key: const Key('rules_and_points_panel'),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF141728),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF222845)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              FaIcon(
+                FontAwesomeIcons.palette,
+                color: Color(0xFF38BDF8),
+                size: 14,
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'REGLAS Y PUNTOS EN DISPUTA',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'El puntaje encendido en el color de la zona es el que está actualmente en juego:',
+            style: TextStyle(
+              color: Color(0xFF94A3B8),
+              fontSize: 11,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...reglas.map(_buildReglaZonaCard),
+        ],
+      ),
     );
   }
 

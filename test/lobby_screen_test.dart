@@ -174,6 +174,8 @@ void main() {
 
         expect(find.byType(GameScreen), findsOneWidget);
         expect(find.textContaining('Sala #58129'), findsOneWidget);
+        expect(find.byKey(const Key('players_scores_top_section')), findsOneWidget);
+        expect(find.byKey(const Key('dice_results_section')), findsOneWidget);
         expect(find.byKey(const Key('rules_and_points_panel')), findsOneWidget);
       },
     );
