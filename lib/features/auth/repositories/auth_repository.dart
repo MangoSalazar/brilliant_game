@@ -38,6 +38,7 @@ abstract class AuthRepository {
 }
 
 /// Implementación remota que se comunica por HTTP REST con el Servidor Shelf.
+/// Si el servidor no responde, utiliza [LocalAuthRepository] como respaldo local.
 class RemoteAuthRepository implements AuthRepository {
   final String baseUrl;
   final http.Client _httpClient;
