@@ -70,6 +70,7 @@ class Tablero {
   final int alto;
   late final List<List<Casilla>> celdas;
   final List<GrupoRegion> regiones = [];
+  List<Casilla> _casillasInicialesPredefinidas = const [];
 
   Tablero({
     this.ancho = ConstantesJuego.anchoTableroPorDefecto,
@@ -81,7 +82,18 @@ class Tablero {
     );
   }
 
+  /// Define explícitamente las 6 casillas iniciales del mapa.
+  void asignarCasillasIniciales(List<Casilla> casillas) {
+    _casillasInicialesPredefinidas = List.unmodifiable(casillas);
+  }
+
+  List<Casilla> get casillasInicialesPredefinidas =>
+      _casillasInicialesPredefinidas;
+
   List<Casilla> generarCasillasIniciales() {
+    if (_casillasInicialesPredefinidas.isNotEmpty) {
+      return List<Casilla>.from(_casillasInicialesPredefinidas);
+    }
     var random = Random();
     var seleccionadas = <Casilla>{};
     while (seleccionadas.length < ConstantesJuego.cantidadValoresIniciales) {
@@ -92,7 +104,18 @@ class Tablero {
     return seleccionadas.toList();
   }
 
-  /// Crea una copia independiente del tablero (valores y regiones incluidos).
+  /// Obtiene el [GrupoRegion] al que pertenece la casilla en `(x, y)`, o `null`.
+  GrupoRegion? regionDeCasilla(int x, int y) {
+    final casilla = getCasilla(x, y);
+    for (final grupo in regiones) {
+      if (grupo.casillas.contains(casilla)) {
+        return grupo;
+      }
+    }
+    return null;
+  }
+
+  /// Crea una copia independiente del tablero (valores, regiones y casillas iniciales incluidos).
   Tablero clonar() {
     final copia = Tablero(ancho: ancho, alto: alto);
     for (var y = 0; y < alto; y++) {
@@ -104,6 +127,13 @@ class Tablero {
       copia.agregarRegion(
         g.tipoRegion,
         g.casillas.map((c) => copia.celdas[c.y][c.x]).toList(),
+      );
+    }
+    if (_casillasInicialesPredefinidas.isNotEmpty) {
+      copia.asignarCasillasIniciales(
+        _casillasInicialesPredefinidas
+            .map((c) => copia.celdas[c.y][c.x])
+            .toList(),
       );
     }
     return copia;

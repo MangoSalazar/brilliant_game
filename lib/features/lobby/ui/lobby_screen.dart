@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../constantes.dart';
 import '../../auth/models/usuario.dart';
-import '../../home/ui/wip_screen.dart';
+import '../../board/ui/game_screen.dart';
 import '../bloc/lobby_bloc.dart';
 import '../bloc/lobby_event.dart';
 import '../bloc/lobby_state.dart';
@@ -114,10 +114,10 @@ class LobbyScreen extends StatelessWidget {
       },
       builder: (context, state) {
         if (state.isInGame && state.sala != null) {
-          return WipScreen(
+          return GameScreen(
             usuario: usuarioActual,
-            sala: state.sala,
-            onBackToMenu: () {
+            sala: state.sala!,
+            onLeaveGame: () {
               context.read<LobbyBloc>().add(const LobbyLeaveRoomRequested());
             },
           );

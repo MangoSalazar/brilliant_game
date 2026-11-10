@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:brilliant_game/features/auth/bloc/auth_bloc.dart';
-import 'package:brilliant_game/features/auth/bloc/auth_state.dart';
-import 'package:brilliant_game/features/auth/repositories/auth_repository.dart';
-import 'package:brilliant_game/features/auth/ui/auth_screen.dart';
-import 'package:brilliant_game/features/lobby/bloc/lobby_bloc.dart';
-import 'package:brilliant_game/features/lobby/bloc/lobby_event.dart';
-import 'package:brilliant_game/features/lobby/bloc/lobby_state.dart';
-import 'package:brilliant_game/features/lobby/repositories/lobby_repository.dart';
-import 'package:brilliant_game/features/lobby/ui/lobby_screen.dart';
-import 'package:brilliant_game/features/menu/ui/main_menu_screen.dart';
+import 'features/auth/bloc/auth_bloc.dart';
+import 'features/auth/bloc/auth_state.dart';
+import 'features/auth/repositories/auth_repository.dart';
+import 'features/auth/ui/auth_screen.dart';
+import 'features/lobby/bloc/lobby_bloc.dart';
+import 'features/lobby/bloc/lobby_event.dart';
+import 'features/lobby/bloc/lobby_state.dart';
+import 'features/lobby/repositories/lobby_repository.dart';
+import 'features/lobby/ui/lobby_screen.dart';
+import 'features/menu/ui/main_menu_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

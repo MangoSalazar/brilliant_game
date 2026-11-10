@@ -1,4 +1,5 @@
 import 'package:test/test.dart';
+import 'package:brilliant_game/mapas_juego.dart';
 import 'package:brilliant_game/region.dart';
 import 'package:brilliant_game/tablero.dart';
 
@@ -95,6 +96,26 @@ void main() {
 
       expect(() => grupo.agregarValor(casillas[0], 7), throwsArgumentError);
       expect(() => grupo.agregarValor(casillas[0], 0), throwsArgumentError);
+    });
+  });
+
+  group('MapasJuego (4 Mapas Oficiales 7x7)', () {
+    test('Los 4 mapas se construyen con dimensión 7x7 y 6 casillas iniciales', () {
+      for (int id = 1; id <= 4; id++) {
+        final tablero = MapasJuego.crearTablero(id);
+        expect(tablero.ancho, equals(7));
+        expect(tablero.alto, equals(7));
+        expect(tablero.generarCasillasIniciales().length, equals(6));
+      }
+    });
+
+    test('Mapa 4 asigna Naranja Alto (4-6) en la fila superior y Naranja Bajo (1-3) en la inferior', () {
+      final tablero4 = MapasJuego.crearTablero(4);
+      final regionArriba = tablero4.regionDeCasilla(0, 0);
+      final regionAbajo = tablero4.regionDeCasilla(0, 6);
+
+      expect(regionArriba?.tipoRegion, isA<TipoNaranjaAlto>());
+      expect(regionAbajo?.tipoRegion, isA<TipoNaranjaBajo>());
     });
   });
 }

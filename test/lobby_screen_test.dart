@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:brilliant_game/features/auth/bloc/auth_bloc.dart';
 import 'package:brilliant_game/features/auth/models/usuario.dart';
 import 'package:brilliant_game/features/auth/repositories/auth_repository.dart';
-import 'package:brilliant_game/features/home/ui/wip_screen.dart';
+import 'package:brilliant_game/features/board/ui/game_screen.dart';
 import 'package:brilliant_game/features/lobby/bloc/lobby_bloc.dart';
 import 'package:brilliant_game/features/lobby/bloc/lobby_event.dart';
 import 'package:brilliant_game/features/lobby/models/jugador_sala.dart';
@@ -166,14 +166,15 @@ void main() {
             tester.widget<ElevatedButton>(startButtonFinder);
         expect(startButtonAfter.onPressed, isNotNull);
 
-        // Al iniciar partida, navega a la vista de partida WIP
+        // Al iniciar partida, navega a la vista de partida GameScreen (Opción A: 3 columnas)
         await tester.ensureVisible(startButtonFinder);
         await tester.pumpAndSettle();
         await tester.tap(startButtonFinder);
         await tester.pumpAndSettle();
 
-        expect(find.byType(WipScreen), findsOneWidget);
+        expect(find.byType(GameScreen), findsOneWidget);
         expect(find.textContaining('Sala #58129'), findsOneWidget);
+        expect(find.byKey(const Key('rules_and_points_panel')), findsOneWidget);
       },
     );
 
