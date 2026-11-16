@@ -136,23 +136,120 @@ abstract final class MapasJuego {
 
     final visitadas = List.generate(alto, (_) => List.filled(ancho, false));
     final casillasAmarillas = <Casilla>[];
+    final casillasGrises = <Casilla>[];
 
-    // 1. Recolectar todas las casillas Amarillas ('A') en una sola región dispersa
+    // 1. Recolectar todas las casillas Amarillas ('A') y Grises ('G') en una sola zona por color
     for (int y = 0; y < alto; y++) {
       for (int x = 0; x < ancho; x++) {
         final codigo = def.matrizColores[y][x].trim().toUpperCase();
         if (codigo == 'A') {
           casillasAmarillas.add(tablero.getCasilla(x, y));
           visitadas[y][x] = true;
+        } else if (codigo == 'G') {
+          casillasGrises.add(tablero.getCasilla(x, y));
+          visitadas[y][x] = true;
         }
       }
     }
 
     if (casillasAmarillas.isNotEmpty) {
-      tablero.agregarRegion(const TipoAmarillo(), casillasAmarillas);
+      tablero.agregarRegion(
+        const TipoAmarillo(),
+        casillasAmarillas,
+        permiteDispersa: true,
+      );
     }
 
-    // 2. Para el resto de colores, agrupar cada bloque conectado ortogonalmente
+    if (casillasGrises.isNotEmpty) {
+      tablero.agregarRegion(
+        const TipoGris(),
+        casillasGrises,
+        permiteDispersa: true,
+      );
+    }
+
+    // 2. Agrupaciones especiales por mapa para zonas divididas o de pocas casillas
+    if (def.id == 3) {
+      // Mapa 3: Los 2 bloques de 3 casillas Moradas en la Fila 7 [(7,1)-(7,3) y (7,5)-(7,7)]
+      // separados por G(7,4) se unen en 1 sola zona Morada inferior de 6 casillas.
+      final moradasFila7 = <Casilla>[];
+      const filaInferior = 6; // Fila 7 (0-based = 6)
+      for (int x = 0; x < ancho; x++) {
+        final codigo = def.matrizColores[filaInferior][x].trim().toUpperCase();
+        if (codigo == 'M' && !visitadas[filaInferior][x]) {
+          moradasFila7.add(tablero.getCasilla(x, filaInferior));
+          visitadas[filaInferior][x] = true;
+        }
+      }
+      if (moradasFila7.isNotEmpty) {
+        tablero.agregarRegion(
+          const TipoMorado(),
+          moradasFila7,
+          permiteDispersa: true,
+        );
+      }
+    } else if (def.id == 4) {
+      // Mapa 4:
+      // - Rojo (R): 2 zonas de 6 casillas unidas por lados (Izquierda: Sup-Izq + Inf-Izq, Derecha: Sup-Der + Inf-Der)
+      // - Azul (AZ): las 6 casillas aisladas unidas en 1 sola zona Azul de 6 casillas
+      // - Verde (V): las 4 casillas aisladas unidas en 1 sola zona Verde de 4 casillas
+      final rojasIzquierda = <Casilla>[];
+      final rojasDerecha = <Casilla>[];
+      final azulesUnidas = <Casilla>[];
+      final verdesUnidas = <Casilla>[];
+
+      for (int y = 0; y < alto; y++) {
+        for (int x = 0; x < ancho; x++) {
+          if (visitadas[y][x]) continue;
+          final codigo = def.matrizColores[y][x].trim().toUpperCase();
+          if (codigo == 'R') {
+            if (x < ancho ~/ 2) {
+              rojasIzquierda.add(tablero.getCasilla(x, y));
+            } else {
+              rojasDerecha.add(tablero.getCasilla(x, y));
+            }
+            visitadas[y][x] = true;
+          } else if (codigo == 'AZ') {
+            azulesUnidas.add(tablero.getCasilla(x, y));
+            visitadas[y][x] = true;
+          } else if (codigo == 'V') {
+            verdesUnidas.add(tablero.getCasilla(x, y));
+            visitadas[y][x] = true;
+          }
+        }
+      }
+
+      if (rojasIzquierda.isNotEmpty) {
+        tablero.agregarRegion(
+          const TipoRojo(),
+          rojasIzquierda,
+          permiteDispersa: true,
+        );
+      }
+      if (rojasDerecha.isNotEmpty) {
+        tablero.agregarRegion(
+          const TipoRojo(),
+          rojasDerecha,
+          permiteDispersa: true,
+        );
+      }
+      if (azulesUnidas.isNotEmpty) {
+        tablero.agregarRegion(
+          const TipoAzul(),
+          azulesUnidas,
+          permiteDispersa: true,
+        );
+      }
+      if (verdesUnidas.isNotEmpty) {
+        tablero.agregarRegion(
+          const TipoVerde(),
+          verdesUnidas,
+          permiteDispersa: true,
+        );
+      }
+    }
+
+    // 3. Para el resto de colores, agrupar cada bloque conectado ortogonalmente
     for (int y = 0; y < alto; y++) {
       for (int x = 0; x < ancho; x++) {
         if (visitadas[y][x]) continue;
@@ -186,7 +283,7 @@ abstract final class MapasJuego {
       }
     }
 
-    // 3. Configurar las 6 casillas iniciales preestablecidas (convirtiendo de 1-based a 0-based)
+    // 4. Configurar las 6 casillas iniciales preestablecidas (convirtiendo de 1-based a 0-based)
     final iniciales = def.coordenadasIniciales
         .map((coord) => tablero.getCasilla(coord.$2 - 1, coord.$1 - 1))
         .toList();

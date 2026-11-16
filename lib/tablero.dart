@@ -14,7 +14,14 @@ class GrupoRegion {
   final Region tipoRegion;
   final List<Casilla> casillas;
 
-  GrupoRegion(this.tipoRegion, this.casillas);
+  /// Indica si esta zona permite casillas no adyacentes (dispersas o unidas a través de otra casilla).
+  final bool permiteDispersa;
+
+  GrupoRegion(
+    this.tipoRegion,
+    this.casillas, {
+    this.permiteDispersa = false,
+  });
 
   bool get estaLlena => casillas.every((c) => c.valor != null);
 
@@ -43,8 +50,10 @@ class GrupoRegion {
   }
 
   bool validarForma() {
-    if (tipoRegion is TipoAmarillo) {
-      return true; // La región amarilla puede tener casillas sueltas
+    if (tipoRegion is TipoAmarillo ||
+        tipoRegion is TipoGris ||
+        permiteDispersa) {
+      return true; // Las regiones dispersas o unidas explícitamente permiten casillas separadas
     }
     if (casillas.isEmpty) return true;
 
@@ -127,6 +136,7 @@ class Tablero {
       copia.agregarRegion(
         g.tipoRegion,
         g.casillas.map((c) => copia.celdas[c.y][c.x]).toList(),
+        permiteDispersa: g.permiteDispersa,
       );
     }
     if (_casillasInicialesPredefinidas.isNotEmpty) {
@@ -146,8 +156,16 @@ class Tablero {
     return celdas[y][x];
   }
 
-  void agregarRegion(Region tipoRegion, List<Casilla> casillasRegion) {
-    var grupo = GrupoRegion(tipoRegion, casillasRegion);
+  void agregarRegion(
+    Region tipoRegion,
+    List<Casilla> casillasRegion, {
+    bool permiteDispersa = false,
+  }) {
+    var grupo = GrupoRegion(
+      tipoRegion,
+      casillasRegion,
+      permiteDispersa: permiteDispersa,
+    );
     if (!grupo.validarForma()) {
       throw ArgumentError(ConstantesJuego.errorFormaRegion);
     }

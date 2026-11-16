@@ -117,5 +117,89 @@ void main() {
       expect(regionArriba?.tipoRegion, isA<TipoNaranjaAlto>());
       expect(regionAbajo?.tipoRegion, isA<TipoNaranjaBajo>());
     });
+
+    test('Mapa 2 une las 2 casillas Grises (1,4) y (7,4) en 1 sola zona Gris de 2 casillas', () {
+      final tablero2 = MapasJuego.crearTablero(2);
+      final zonasGrises = tablero2.regiones
+          .where((g) => g.tipoRegion is TipoGris)
+          .toList();
+
+      expect(zonasGrises.length, equals(1));
+      expect(zonasGrises.first.casillas.length, equals(2));
+      expect(
+        identical(tablero2.regionDeCasilla(3, 0), tablero2.regionDeCasilla(3, 6)),
+        isTrue,
+      );
+    });
+
+    test('Mapa 3 une las 5 casillas Grises en 1 sola zona y los 2 bloques Morados de la Fila 7 en 1 zona de 6 casillas', () {
+      final tablero3 = MapasJuego.crearTablero(3);
+      final zonasGrises = tablero3.regiones
+          .where((g) => g.tipoRegion is TipoGris)
+          .toList();
+      final zonasMoradas = tablero3.regiones
+          .where((g) => g.tipoRegion is TipoMorado)
+          .toList();
+      final zonasAmarillas = tablero3.regiones
+          .where((g) => g.tipoRegion is TipoAmarillo)
+          .toList();
+
+      expect(zonasGrises.length, equals(1));
+      expect(zonasGrises.first.casillas.length, equals(5));
+
+      expect(zonasAmarillas.length, equals(1));
+      expect(zonasAmarillas.first.casillas.length, equals(6));
+
+      // 2 zonas Moradas de 6 casillas cada una (bloque superior de 6 y fila 7 unida de 6)
+      expect(zonasMoradas.length, equals(2));
+      expect(zonasMoradas.every((g) => g.casillas.length == 6), isTrue);
+      // (0,6) [Fila 7, Col 1] y (6,6) [Fila 7, Col 7] pertenecen a la misma zona Morada inferior
+      expect(
+        identical(tablero3.regionDeCasilla(0, 6), tablero3.regionDeCasilla(6, 6)),
+        isTrue,
+      );
+      // Y son independientes del bloque Morado superior en (2,0) [Fila 1, Col 3]
+      expect(
+        identical(tablero3.regionDeCasilla(0, 6), tablero3.regionDeCasilla(2, 0)),
+        isFalse,
+      );
+    });
+
+    test('Mapa 4 une Rojo por lados (2 zonas de 6), Azul en 1 zona de 6 y Verde en 1 zona de 4', () {
+      final tablero4 = MapasJuego.crearTablero(4);
+      final zonasRojas = tablero4.regiones
+          .where((g) => g.tipoRegion is TipoRojo)
+          .toList();
+      final zonasAzules = tablero4.regiones
+          .where((g) => g.tipoRegion is TipoAzul)
+          .toList();
+      final zonasVerdes = tablero4.regiones
+          .where((g) => g.tipoRegion is TipoVerde)
+          .toList();
+
+      // Rojo: 2 zonas de 6 casillas (Izquierda: Sup-Izq + Inf-Izq, Derecha: Sup-Der + Inf-Der)
+      expect(zonasRojas.length, equals(2));
+      expect(zonasRojas.every((g) => g.casillas.length == 6), isTrue);
+      expect(
+        identical(tablero4.regionDeCasilla(1, 1), tablero4.regionDeCasilla(0, 4)),
+        isTrue,
+      );
+      expect(
+        identical(tablero4.regionDeCasilla(5, 1), tablero4.regionDeCasilla(6, 4)),
+        isTrue,
+      );
+      expect(
+        identical(tablero4.regionDeCasilla(1, 1), tablero4.regionDeCasilla(5, 1)),
+        isFalse,
+      );
+
+      // Azul: 1 sola zona de 6 casillas
+      expect(zonasAzules.length, equals(1));
+      expect(zonasAzules.first.casillas.length, equals(6));
+
+      // Verde: 1 sola zona de 4 casillas
+      expect(zonasVerdes.length, equals(1));
+      expect(zonasVerdes.first.casillas.length, equals(4));
+    });
   });
 }
