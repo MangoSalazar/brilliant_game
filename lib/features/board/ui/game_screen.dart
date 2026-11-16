@@ -12,6 +12,7 @@ import '../../lobby/models/jugador_sala.dart';
 import '../../lobby/models/sala_partida.dart';
 import '../bloc/game_play_bloc.dart';
 import '../bloc/setup_bloc.dart';
+import '../services/game_sound_service.dart';
 
 /// Información visual de una regla de región y sus puntuaciones en disputa.
 class _ReglaZonaVisual {
@@ -40,12 +41,14 @@ class GameScreen extends StatefulWidget {
   final Usuario usuario;
   final SalaPartida sala;
   final VoidCallback onLeaveGame;
+  final GameSoundService? soundService;
 
   const GameScreen({
     super.key,
     required this.usuario,
     required this.sala,
     required this.onLeaveGame,
+    this.soundService,
   });
 
   @override
@@ -56,6 +59,7 @@ class _GameScreenState extends State<GameScreen> {
   late final SetupBloc _setupBloc;
   late final MapaDefinicion _mapaDefinicion;
   late final Tablero _tablero;
+  late final GameSoundService _soundService;
   int? _numeroSeleccionado = 1;
   bool _setupConfirmadoLocalmente = false;
 
@@ -64,10 +68,12 @@ class _GameScreenState extends State<GameScreen> {
   int? _anclaIndex = 0;
   Casilla? _casillaJugadaEnRonda;
   bool _turnoConfirmadoEnRonda = false;
+  bool _gameOverSonado = false;
 
   @override
   void initState() {
     super.initState();
+    _soundService = widget.soundService ?? GameSoundService.instance;
     _mapaDefinicion =
         MapasJuego.obtenerDefinicion(widget.sala.mapaSeleccionado);
     _tablero = MapasJuego.crearTablero(widget.sala.mapaSeleccionado);
@@ -91,10 +97,26 @@ class _GameScreenState extends State<GameScreen> {
       _setupConfirmadoLocalmente = true;
     }
 
+    if (sala.estadoSala == EstadoSala.finalizada) {
+      if (!_gameOverSonado) {
+        _gameOverSonado = true;
+        _soundService.playGameOver();
+      }
+    } else {
+      _gameOverSonado = false;
+    }
+
     if (sala.rondaActual != _rondaProcesada) {
-      _rondaProcesada = sala.rondaActual;
+      final nuevaRonda = sala.rondaActual;
+      _rondaProcesada = nuevaRonda;
       _casillaJugadaEnRonda = null;
       _turnoConfirmadoEnRonda = yo?.turnoListo ?? false;
+
+      if (nuevaRonda >= 1 &&
+          sala.dadosActuales.length >= 2 &&
+          sala.estadoSala != EstadoSala.finalizada) {
+        _soundService.playDiceRoll();
+      }
 
       if (sala.dadosActuales.length >= 2) {
         final d0 = sala.dadosActuales[0];
@@ -365,6 +387,7 @@ class _GameScreenState extends State<GameScreen> {
     }
 
     _setupBloc.add(InputValue(casilla, valorElegido));
+    _soundService.playPlaceNumber();
 
     // Seleccionar automáticamente el siguiente número libre del 1 al 6
     final usadosAhora = {...ingresados.values, valorElegido};
@@ -417,6 +440,13 @@ class _GameScreenState extends State<GameScreen> {
       casilla.valor = vColocar;
       _casillaJugadaEnRonda = casilla;
     });
+
+    final grupo = _tablero.regionDeCasilla(casilla.x, casilla.y);
+    if (grupo != null && grupo.estaLlena) {
+      _soundService.playRegionCompleted();
+    } else {
+      _soundService.playPlaceNumber();
+    }
   }
 
   void _limpiarTodoSetup(SetupState state) {
@@ -682,6 +712,26 @@ class _GameScreenState extends State<GameScreen> {
         ],
       ),
       actions: [
+        IconButton(
+          key: const Key('game_sound_toggle_button'),
+          tooltip: _soundService.isEnabled
+              ? 'Silenciar efectos de sonido'
+              : 'Activar efectos de sonido',
+          onPressed: () {
+            setState(() {
+              _soundService.toggleMute();
+            });
+          },
+          icon: FaIcon(
+            _soundService.isEnabled
+                ? FontAwesomeIcons.volumeHigh
+                : FontAwesomeIcons.volumeXmark,
+            color: _soundService.isEnabled
+                ? const Color(0xFF38BDF8)
+                : const Color(0xFF64748B),
+            size: 15,
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.only(right: 16),
           child: Center(
