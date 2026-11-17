@@ -8,7 +8,11 @@ Está concebido para partidas **multijugador** competitivas en red bajo una arqu
 - **Plataforma:** Dispositivos móviles (Android / iOS) y Web.
 - **Tecnología:** Dart & Flutter (arquitectura con BLoC y comunicación en tiempo real con servidor).
 - **Modalidad:** Multijugador en red global por Internet / WAN (hasta 6 jugadores por sala, cada uno con su tablero independiente). Los usuarios pueden conectarse y jugar simultáneamente desde cualquier lugar del mundo.
-- **Condición de victoria:** La partida termina en cuanto un jugador alcanza **21 o más puntos**. Gana quien cumpla esta condición primero.
+- **Condición de victoria:** La meta de puntos depende del número de participantes en la partida:
+  - **2 jugadores:** alcanzar al menos **26 puntos**.
+  - **3 jugadores:** alcanzar al menos **24 puntos**.
+  - **4 jugadores:** alcanzar al menos **22 puntos**.
+  - **5 o más jugadores (5 o 6):** alcanzar al menos **20 puntos**.
 
 ---
 
@@ -162,9 +166,13 @@ Los puntos se consiguen a medida que los jugadores completan regiones a lo largo
 
 ## 8. Fin de la Partida y Declaración de Ganador
 
-- **Condición de Fin:** La partida concluye de inmediato cuando cualquier jugador alcanza **21 o más puntos**.
-- **Ganador:** Se proclama ganador al jugador que haya alcanzado los 21 puntos (o la puntuación más alta en la ronda de cierre).
-- **Final alternativo:** Si todos los jugadores llenan por completo todas las regiones de sus tableros antes de que alguien alcance 21 puntos, gana el jugador con mayor puntaje acumulado.
+- **Condición de Fin según Número de Jugadores:**
+  - **2 personas:** La partida concluye cuando algún jugador consigue **26 o más puntos**.
+  - **3 personas:** La partida concluye cuando algún jugador consigue **24 o más puntos**.
+  - **4 personas:** La partida concluye cuando algún jugador consigue **22 o más puntos**.
+  - **5 o más personas:** La partida concluye cuando algún jugador consigue **20 o más puntos**.
+- **Ganador:** Se proclama ganador al jugador que haya alcanzado la meta de puntos correspondiente (o la puntuación más alta en la ronda de cierre).
+- **Final alternativo:** Si todos los jugadores llenan por completo todas las regiones de sus tableros antes de que alguien alcance la meta de puntos, gana el jugador con mayor puntaje acumulado.
 
 ---
 

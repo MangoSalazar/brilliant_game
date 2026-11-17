@@ -27,7 +27,7 @@ class GameInfoBanner extends StatelessWidget {
             icon: FontAwesomeIcons.trophy,
             color: Color(0xFFF59E0B),
             title: 'Meta de Victoria',
-            value: '21+ Puntos',
+            value: '20 a 26 Puntos',
           ),
           _InfoItem(
             icon: FontAwesomeIcons.users,

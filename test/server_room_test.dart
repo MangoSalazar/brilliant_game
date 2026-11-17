@@ -214,7 +214,7 @@ void main() {
       expect(salaEnCurso.gameMasterId, equals('usr_2'));
     });
 
-    test('Sincroniza fin de Setup, tira dados por ronda, adjudica puntos con empates y declara ganador a los 21+ puntos', () {
+    test('Sincroniza fin de Setup, tira dados por ronda, adjudica puntos con empates y declara ganador con 2 jugadores al llegar a 26+ puntos', () {
       final sala = roomManager.crearSala(
         jugadorId: 'usr_1',
         nombreJugador: 'Mango1',
@@ -224,6 +224,7 @@ void main() {
         jugadorId: 'usr_2',
         nombreJugador: 'Mango2',
       );
+      expect(sala.metaPuntosVictoria, equals(26));
       roomManager.cambiarEstadoListo(
         codigo: sala.codigo,
         jugadorId: 'usr_1',
@@ -296,11 +297,28 @@ void main() {
       );
       expect(salaRonda3.indicesEnDisputaPorColor['azul'], equals(1));
 
-      // Ronda 3: Jugador 1 completa 'morado' (1.º lugar = 8 pts -> total 24 pts >= 21) -> Gana la partida
+      // Ronda 3: Jugador 1 completa 'morado' (1.º lugar = 8 pts -> total 24 pts < 26 para 2 jugadores) -> Sigue jugando en Ronda 4
       roomManager.completarTurnoJugador(
         codigo: sala.codigo,
         jugadorId: 'usr_1',
         coloresCompletados: ['morado'],
+      );
+      final salaRonda4 = roomManager.completarTurnoJugador(
+        codigo: sala.codigo,
+        jugadorId: 'usr_2',
+      );
+      expect(salaRonda4.estadoSala, equals(EstadoSala.enJuego));
+      expect(salaRonda4.rondaActual, equals(4));
+      expect(
+        salaRonda4.jugadores.firstWhere((j) => j.id == 'usr_1').puntos,
+        equals(24),
+      );
+
+      // Ronda 4: Jugador 1 completa 'verde' (1.º lugar = 4 pts -> total 28 pts >= 26) -> Gana la partida
+      roomManager.completarTurnoJugador(
+        codigo: sala.codigo,
+        jugadorId: 'usr_1',
+        coloresCompletados: ['verde'],
       );
       final salaFinal = roomManager.completarTurnoJugador(
         codigo: sala.codigo,
@@ -310,8 +328,46 @@ void main() {
       expect(salaFinal.ganadorId, equals('usr_1'));
       expect(
         salaFinal.jugadores.firstWhere((j) => j.id == 'usr_1').puntos,
-        equals(24),
+        equals(28),
       );
+    });
+
+    test('Meta de victoria escala dinámicamente según número de jugadores (2->26, 3->24, 4->22, 5+->20)', () {
+      expect(ConstantesJuego.puntosParaGanarSegunJugadores(2), equals(26));
+      expect(ConstantesJuego.puntosParaGanarSegunJugadores(3), equals(24));
+      expect(ConstantesJuego.puntosParaGanarSegunJugadores(4), equals(22));
+      expect(ConstantesJuego.puntosParaGanarSegunJugadores(5), equals(20));
+      expect(ConstantesJuego.puntosParaGanarSegunJugadores(6), equals(20));
+
+      // Verificar sala con 3 jugadores (meta = 24), 4 jugadores (meta = 22) y 5 jugadores (meta = 20)
+      final sala = roomManager.crearSala(jugadorId: 'j1', nombreJugador: 'J1');
+      var actual = roomManager.unirseASala(
+        codigo: sala.codigo,
+        jugadorId: 'j2',
+        nombreJugador: 'J2',
+      );
+      expect(actual.metaPuntosVictoria, equals(26));
+
+      actual = roomManager.unirseASala(
+        codigo: sala.codigo,
+        jugadorId: 'j3',
+        nombreJugador: 'J3',
+      );
+      expect(actual.metaPuntosVictoria, equals(24));
+
+      actual = roomManager.unirseASala(
+        codigo: sala.codigo,
+        jugadorId: 'j4',
+        nombreJugador: 'J4',
+      );
+      expect(actual.metaPuntosVictoria, equals(22));
+
+      actual = roomManager.unirseASala(
+        codigo: sala.codigo,
+        jugadorId: 'j5',
+        nombreJugador: 'J5',
+      );
+      expect(actual.metaPuntosVictoria, equals(20));
     });
   });
 

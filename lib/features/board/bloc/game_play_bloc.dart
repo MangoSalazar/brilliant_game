@@ -309,7 +309,9 @@ class GamePlayBloc extends Bloc<GamePlayEvent, GamePlayState> {
       };
     }
 
-    final terminada = puntos.any((p) => p >= ConstantesJuego.puntosParaGanar) ||
+    final metaPuntos =
+        ConstantesJuego.puntosParaGanarSegunJugadores(s.tableros.length);
+    final terminada = puntos.any((p) => p >= metaPuntos) ||
         s.tableros.every(
           (t) => t.regiones.every((g) => g.estaLlena),
         );

@@ -407,14 +407,15 @@ class RoomManager {
 
     final activosActualizados =
         jugadoresActualizados.where((j) => !j.abandono).toList();
-    final alguienAlcanzo21 = activosActualizados.any(
-      (j) => j.puntos >= ConstantesJuego.puntosParaGanar,
+    final metaPuntos = sala.metaPuntosVictoria;
+    final alguienAlcanzoMeta = activosActualizados.any(
+      (j) => j.puntos >= metaPuntos,
     );
     final llenosSet = _tablerosLlenos[sala.codigo] ?? const <String>{};
     final todosTablerosLlenos = activosActualizados.isNotEmpty &&
         activosActualizados.every((j) => llenosSet.contains(j.id));
 
-    if (alguienAlcanzo21 || todosTablerosLlenos) {
+    if (alguienAlcanzoMeta || todosTablerosLlenos) {
       JugadorSala ganador = activosActualizados.first;
       for (final candidato in activosActualizados.skip(1)) {
         if (candidato.puntos > ganador.puntos) {

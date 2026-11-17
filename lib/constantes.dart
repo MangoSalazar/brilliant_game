@@ -3,8 +3,38 @@ abstract final class ConstantesJuego {
   // ==========================================
   // Reglas Generales y Condiciones de Victoria
   // ==========================================
-  /// Puntuación mínima requerida para declarar la victoria y terminar la partida.
-  static const int puntosParaGanar = 21;
+  /// Puntuación mínima requerida para ganar en partidas de 2 jugadores (o menos).
+  static const int puntosParaGanar2Jugadores = 26;
+
+  /// Puntuación mínima requerida para ganar en partidas de 3 jugadores.
+  static const int puntosParaGanar3Jugadores = 24;
+
+  /// Puntuación mínima requerida para ganar en partidas de 4 jugadores.
+  static const int puntosParaGanar4Jugadores = 22;
+
+  /// Puntuación mínima requerida para ganar en partidas de 5 o más jugadores.
+  static const int puntosParaGanar5OMasJugadores = 20;
+
+  /// Puntuación mínima por defecto (para partidas estándar de 2 jugadores).
+  static const int puntosParaGanar = puntosParaGanar2Jugadores;
+
+  /// Devuelve los puntos necesarios para alcanzar la victoria según la [cantidadJugadores]:
+  /// - 5 o más personas: 20 puntos
+  /// - 4 personas: 22 puntos
+  /// - 3 personas: 24 puntos
+  /// - 2 personas (o menos): 26 puntos
+  static int puntosParaGanarSegunJugadores(int cantidadJugadores) {
+    if (cantidadJugadores >= 5) {
+      return puntosParaGanar5OMasJugadores;
+    }
+    if (cantidadJugadores == 4) {
+      return puntosParaGanar4Jugadores;
+    }
+    if (cantidadJugadores == 3) {
+      return puntosParaGanar3Jugadores;
+    }
+    return puntosParaGanar2Jugadores;
+  }
 
   /// Cantidad de dados lanzados por turno.
   static const int cantidadDados = 2;

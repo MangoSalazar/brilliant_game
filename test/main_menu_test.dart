@@ -34,7 +34,7 @@ void main() {
       expect(find.text('Crear Partida'), findsOneWidget);
       expect(find.text('Unirse a Partida'), findsOneWidget);
       expect(find.text('Meta de Victoria'), findsOneWidget);
-      expect(find.text('21+ Puntos'), findsOneWidget);
+      expect(find.text('20 a 26 Puntos'), findsOneWidget);
       expect(find.text('Tirada de Ronda'), findsOneWidget);
     });
 

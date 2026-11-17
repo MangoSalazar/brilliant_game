@@ -785,6 +785,8 @@ class _GameScreenState extends State<GameScreen> {
 
   /// Apartado de Puntuaciones ubicado encima del tablero (con resultados de dados en medio).
   Widget _buildTopPlayersScoresSection() {
+    final metaPuntos = widget.sala.metaPuntosVictoria;
+
     return Container(
       key: const Key('players_scores_top_section'),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -796,18 +798,18 @@ class _GameScreenState extends State<GameScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              FaIcon(
+              const FaIcon(
                 FontAwesomeIcons.trophy,
                 color: Color(0xFFF59E0B),
                 size: 13,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'PUNTUACIONES DE LA SALA (META: 21 PUNTOS)',
-                  style: TextStyle(
+                  'PUNTUACIONES DE LA SALA (META: $metaPuntos PUNTOS)',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.w800,

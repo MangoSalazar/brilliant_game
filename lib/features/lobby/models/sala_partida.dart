@@ -70,6 +70,10 @@ class SalaPartida extends Equatable {
   /// Verifica si el identificador corresponde al Game Master actual de la sala.
   bool esGameMaster(String jugadorId) => gameMasterId == jugadorId;
 
+  /// Meta de puntos necesaria para ganar según el número de jugadores de la partida.
+  int get metaPuntosVictoria =>
+      ConstantesJuego.puntosParaGanarSegunJugadores(jugadores.length);
+
   SalaPartida copyWith({
     String? codigo,
     String? gameMasterId,
