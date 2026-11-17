@@ -202,6 +202,39 @@ A requerimiento explícito del diseño de arquitectura, se formalizó y delimit�
 
 ---
 
+### Sesión: 16 de Noviembre de 2026
+
+#### 1. Revisión y Unificación de Zonas Dispersas o Divididas en Mapas 2, 3 y 4
+- Se actualizó [`GrupoRegion`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/tablero.dart) con el parámetro `permiteDispersa` (y soporte nativo en `TipoGris`) y se ajustó [`MapasJuego.crearTablero`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/mapas_juego.dart) según las decisiones confirmadas por el usuario:
+  - **Mapa 2:** Las 2 casillas Grises aisladas `(1,4)` y `(7,4)` se unificaron en **1 sola zona Gris de 2 casillas** (exigiendo el mismo número y completándose solo cuando ambas están llenas).
+  - **Mapa 3:**
+    - Las 5 casillas Grises repartidas `(1,4), (2,1), (2,7), (4,4), (7,4)` se unificaron en **1 sola zona Gris dispersa de 5 casillas**.
+    - Los 2 bloques Morados de 3 casillas en la Fila 7 `[(7,1)-(7,3) y (7,5)-(7,7)]` separados por `G(7,4)` se unieron en **1 sola zona Morada inferior de 6 casillas** (independiente del bloque Morado superior de 6 casillas).
+    - Las dos esquinas superiores Amarillas de 3 casillas se mantienen como **1 sola zona Amarilla de 6 casillas**.
+  - **Mapa 4:**
+    - Los 4 bloques Rojos de 3 casillas se unieron por lados en **2 zonas Rojas de 6 casillas**: **Izquierda** (`Sup-Izq + Inf-Izq`) y **Derecha** (`Sup-Der + Inf-Der`).
+    - Las 6 casillas Azules aisladas `(2,3), (2,5), (4,3), (4,5), (6,3), (6,5)` se unificaron en **1 sola zona Azul de 6 casillas**.
+    - Las 4 casillas Verdes aisladas `(2,4), (4,2), (4,6), (6,4)` se unificaron en **1 sola zona Verde de 4 casillas**.
+- Se añadieron las pruebas unitarias correspondientes en [`test/tablero_test.dart`](file:///C:/Users/Manguito/Documents/brilliant_game/test/tablero_test.dart) (commit `a5b45be`).
+
+#### 2. Implementación de Efectos de Sonido Sintetizados en Memoria (`GameSoundService`)
+- Se implementó [`GameSoundService`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/board/services/game_sound_service.dart) junto con los adaptadores multiplataforma ([`sound_player_web.dart`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/board/services/sound_player_web.dart), [`sound_player_io.dart`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/board/services/sound_player_io.dart) y [`sound_player_stub.dart`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/board/services/sound_player_stub.dart)) que generan ondas `.wav` PCM de 16 bits en memoria sin requerir plugins con *symlinks* nativos:
+  - 🎲 **`diceRoll`:** Repique percusivo de dados al iniciar cada ronda y recibir los 2 dados globales.
+  - 🎯 **`placeNumber`:** Sonido corto tipo *"pop"* al colocar un número en el tablero (en Setup o en Ronda).
+  - ✨ **`regionCompleted`:** Acorde mayor ascendente (`Do5 -> Mi5 -> Sol5 -> Do6`) al llenar el 100% de una región.
+  - 🏆 **`gameOver`:** Fanfarria de victoria al finalizar la partida.
+- Se integró un botón de activar/silenciar sonido (`Key('game_sound_toggle_button')`) en la barra superior de [`GameScreen`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/board/ui/game_screen.dart) y se agregaron pruebas en [`test/game_sound_service_test.dart`](file:///C:/Users/Manguito/Documents/brilliant_game/test/game_sound_service_test.dart) (commit `f551641`).
+
+#### 3. Escala Dinámica de Puntos para Ganar según Cantidad de Jugadores
+- Se actualizó la regla oficial de condición de victoria en [`ConstantesJuego`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/constantes.dart), [`SalaPartida.metaPuntosVictoria`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/lobby/models/sala_partida.dart), [`RoomManager`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/server/services/room_manager.dart), [`GamePlayBloc`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/board/bloc/game_play_bloc.dart), [`GameScreen`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/board/ui/game_screen.dart), [`GameInfoBanner`](file:///C:/Users/Manguito/Documents/brilliant_game/lib/features/menu/ui/widgets/game_info_banner.dart) y [`Definicion de juego.md`](file:///C:/Users/Manguito/Documents/brilliant_game/Documentacion/Definicion%20de%20juego.md):
+  - **2 jugadores:** 26 puntos.
+  - **3 jugadores:** 24 puntos.
+  - **4 jugadores:** 22 puntos.
+  - **5 o más jugadores (5-6):** 20 puntos.
+- Se alcanzó un total de **77 pruebas automatizadas aprobadas** (`flutter test`) y cero advertencias en `flutter analyze` (commit `2ddb6cd`).
+
+---
+
 ## 🎯 Siguientes Pasos
-1. Realizar pruebas de experiencia de usuario multijugador con varias ventanas/clientes simultáneos en navegador y ajustar detalles visuales o animaciones de transición entre rondas si se requiere.
+1. Realizar pruebas de experiencia de usuario multijugador con varias ventanas/clientes simultáneos en navegador verificando los nuevos efectos de sonido y las metas dinámicas de puntuación.
 2. Evaluar si se desea agregar un temporizador opcional por ronda o revancha rápida dentro de la misma sala al finalizar una partida.
